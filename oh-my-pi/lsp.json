@@ -1,0 +1,18 @@
+{
+  "servers": {
+    "typescript-language-server": {
+      "disabled": true
+    },
+    "tsgo": {
+      "command": "/home/__WSL_USER__/.volta/tools/image/packages/typescript/lib/node_modules/typescript/node_modules/@typescript/typescript-linux-x64/lib/tsc",
+      "args": ["--lsp", "--stdio"],
+      "fileTypes": [".ts", ".tsx", ".js", ".jsx", ".mts", ".cts", ".mjs", ".cjs"],
+      "rootMarkers": ["tsconfig.json", "jsconfig.json", "package.json", ".git"]
+    },
+    "csharp-ls": {
+      "command": "/home/__WSL_USER__/.dotnet/tools/csharp-ls",
+      "fileTypes": [".cs"],
+      "rootMarkers": ["*.sln", "*.slnx", "*.csproj", ".git"]
+    }
+  }
+}

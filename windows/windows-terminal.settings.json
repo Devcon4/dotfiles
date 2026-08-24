@@ -1,0 +1,211 @@
+{
+    "$help": "https://aka.ms/terminal-documentation",
+    "$schema": "https://aka.ms/terminal-profiles-schema",
+    "actions": 
+    [
+        {
+            "command": 
+            {
+                "action": "splitPane",
+                "profile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                "split": "right"
+            },
+            "id": "User.SplitRight.PowerShell",
+            "name": "Split right (PowerShell)"
+        },
+        {
+            "command": 
+            {
+                "action": "splitPane",
+                "profile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                "split": "down"
+            },
+            "id": "User.SplitDown.PowerShell",
+            "name": "Split down (PowerShell)"
+        },
+        {
+            "command": 
+            {
+                "action": "splitPane",
+                "profile": "Ubuntu",
+                "split": "right"
+            },
+            "id": "User.SplitRight.Ubuntu",
+            "name": "Split right (Ubuntu)"
+        },
+        {
+            "command": 
+            {
+                "action": "splitPane",
+                "profile": "Ubuntu",
+                "split": "down"
+            },
+            "id": "User.SplitDown.Ubuntu",
+            "name": "Split down (Ubuntu)"
+        },
+        {
+            "command": 
+            {
+                "action": "globalSummon"
+            },
+            "id": "User.GlobalSummon",
+            "name": "Show/hide terminal (global)"
+        }
+    ],
+    "copyFormatting": "none",
+    "copyOnSelect": false,
+    "defaultProfile": "{5cbf2a68-f8fd-5d91-b035-fae2aa9dadf7}",
+    "keybindings": 
+    [
+        {
+            "id": "User.SplitRight.Ubuntu",
+            "keys": "ctrl+alt+plus"
+        },
+        {
+            "id": "Terminal.CopyToClipboard",
+            "keys": "ctrl+c"
+        },
+        {
+            "id": "Terminal.PasteFromClipboard",
+            "keys": "ctrl+v"
+        },
+        {
+            "id": "User.GlobalSummon",
+            "keys": "alt+q"
+        },
+        {
+            "id": "Terminal.DuplicatePaneAuto",
+            "keys": "alt+shift+d"
+        },
+        {
+            "id": "User.SplitRight.PowerShell",
+            "keys": "ctrl+shift+plus"
+        },
+        {
+            "id": "User.SplitDown.PowerShell",
+            "keys": "ctrl+shift+minus"
+        },
+        {
+            "id": "User.SplitDown.Ubuntu",
+            "keys": "ctrl+alt+minus"
+        },
+        {
+            "id": "Terminal.TogglePaneZoom",
+            "keys": "alt+z"
+        }
+    ],
+    "launchMode": "fullscreen",
+    "newTabMenu": 
+    [
+        {
+            "type": "remainingProfiles"
+        }
+    ],
+    "profiles": 
+    {
+        "defaults": 
+        {
+            "closeOnExit": "always",
+            "colorScheme": "Park Ranger Dark",
+            "font": 
+            {
+                "face": "MonaspiceNe Nerd Font",
+                "size": 11
+            },
+            "opacity": 90,
+            "useAcrylic": false
+        },
+        "list": 
+        [
+            {
+                "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoLogo",
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "hidden": false,
+                "name": "Windows PowerShell",
+                "startingDirectory": "%USERPROFILE%\\code"
+            },
+            {
+                "commandline": "%SystemRoot%\\System32\\cmd.exe",
+                "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                "hidden": false,
+                "name": "Command Prompt"
+            },
+            {
+                "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
+                "hidden": false,
+                "name": "Azure Cloud Shell",
+                "source": "Windows.Terminal.Azure"
+            },
+            {
+                "guid": "{ca1fdc5c-bbdc-5b96-a7f3-d2789abfd2d4}",
+                "hidden": false,
+                "name": "Developer Command Prompt for VS 18",
+                "source": "Windows.Terminal.VisualStudio"
+            },
+            {
+                "guid": "{9e0f55b9-13cf-5ea2-917e-2796dfc72b6b}",
+                "hidden": false,
+                "name": "Developer PowerShell for VS 18",
+                "source": "Windows.Terminal.VisualStudio"
+            },
+            {
+                "guid": "{5cbf2a68-f8fd-5d91-b035-fae2aa9dadf7}",
+                "hidden": false,
+                "icon": "\ud83c\udf32",
+                "name": "Ubuntu",
+                "source": "Microsoft.WSL",
+                "startingDirectory": "\\\\wsl.localhost\\__WSL_DISTRO__\\home\\__WSL_USER__\\code"
+            },
+            {
+                "commandline": "pwsh.exe -NoLogo",
+                "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                "hidden": false,
+                "icon": "\u26a1",
+                "name": "PowerShell",
+                "source": "Windows.Terminal.PowershellCore",
+                "startingDirectory": "%USERPROFILE%\\code"
+            }
+        ]
+    },
+    "schemes": 
+    [
+        {
+            "background": "#121614",
+            "black": "#1B211C",
+            "blue": "#6B8CA3",
+            "brightBlack": "#4A5548",
+            "brightBlue": "#8DABBF",
+            "brightCyan": "#8FBFB6",
+            "brightGreen": "#7FA98A",
+            "brightPurple": "#C48D99",
+            "brightRed": "#E57352",
+            "brightWhite": "#F4EFE2",
+            "brightYellow": "#E6B968",
+            "cursorColor": "#D9542F",
+            "cyan": "#6FA39A",
+            "foreground": "#F4EFE2",
+            "green": "#5F8A6C",
+            "name": "Park Ranger Dark",
+            "purple": "#A9707E",
+            "red": "#D9542F",
+            "selectionBackground": "#2C3A30",
+            "white": "#E9E0CB",
+            "yellow": "#D8A04A"
+        }
+    ],
+    "theme": "Park Ranger Dark",
+    "themes": 
+    [
+        {
+            "name": "Park Ranger Dark",
+            "window": 
+            {
+                "applicationTheme": "dark",
+                "experimental.rainbowFrame": false,
+                "frame": null,
+                "unfocusedFrame": null,
+                "useMica": false
+            }
+        }
+    ]
+}

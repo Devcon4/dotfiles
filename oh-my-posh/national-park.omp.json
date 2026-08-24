@@ -1,0 +1,104 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 4,
+  "final_space": true,
+  "palette": {
+    "ink": "#121614",
+    "cream": "#f4efe2",
+    "sand": "#e9e0cb",
+    "muted": "#b5ad97",
+    "gray": "#4a5548",
+    "forest": "#2c3a30",
+    "moss": "#5f8a6c",
+    "green-bright": "#7fa98a",
+    "sage": "#6fa39a",
+    "amber": "#d8a04a",
+    "ember": "#d9542f",
+    "ember-bright": "#e57352",
+    "blue": "#6b8ca3"
+  },
+  "blocks": [
+    {
+      "alignment": "left",
+      "type": "prompt",
+      "segments": [
+        {
+          "type": "root",
+          "style": "plain",
+          "foreground": "p:amber",
+          "template": "\uf0e7 "
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "p:green-bright",
+          "foreground_templates": [
+            "{{ if eq .OS \"windows\" }}p:blue{{ end }}"
+          ],
+          "template": "{{ if eq .OS \"windows\" }}\uebc7{{ else }}\uf31b{{ end }}"
+        },
+        {
+          "type": "path",
+          "style": "plain",
+          "foreground": "p:sand",
+          "options": {
+            "style": "agnoster_short",
+            "max_depth": 2,
+            "folder_icon": "\uf115",
+            "folder_separator_icon": " <p:gray>\ue0b1</> ",
+            "home_icon": "\uf015",
+            "mapped_locations": {
+              "~/code": "\uf121",
+              "/home/__WSL_USER__/code": "\uf121",
+              "/mnt/d": "\uf121",
+              "D:": "\uf121",
+              "\\\\wsl.localhost\\__WSL_DISTRO__\\home\\__WSL_USER__\\code": "\uf121",
+              "C:\\Users\\__WIN_USER__\\code": "\uf121",
+              "\\\\wsl$\\__WSL_DISTRO__\\home\\__WSL_USER__\\code": "\uf121",
+              "\\\\?\\UNC\\wsl.localhost\\__WSL_DISTRO__\\home\\__WSL_USER__\\code": "\uf121",
+              "UNC\\wsl.localhost\\__WSL_DISTRO__\\home\\__WSL_USER__\\code": "\uf121"
+            }
+          },
+          "template": " <p:gray>\ue0b1</> {{ .Path }}"
+        },
+        {
+          "type": "git",
+          "style": "plain",
+          "foreground": "p:moss",
+          "foreground_templates": [
+            "{{ if or (.Working.Changed) (.Staging.Changed) }}p:amber{{ end }}",
+            "{{ if or (gt .Ahead 0) (gt .Behind 0) }}p:blue{{ end }}"
+          ],
+          "options": {
+            "fetch_status": true,
+            "fetch_upstream_icon": true,
+            "native_fallback": true
+          },
+          "template": " <p:gray>\ue0b1</> {{ .UpstreamIcon }}{{ .HEAD }}{{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if .Working.Changed }} \uf044 {{ .Working.String }}{{ end }}{{ if .Staging.Changed }} \uf046 {{ .Staging.String }}{{ end }}"
+        },
+        {
+          "type": "node",
+          "style": "plain",
+          "foreground": "p:sage",
+          "options": {
+            "display_mode": "files",
+            "fetch_package_manager": false
+          },
+          "template": " <p:gray>\ue0b1</> \ue718 {{ .Full }}"
+        },
+        {
+          "type": "status",
+          "style": "plain",
+          "foreground": "p:ember-bright",
+          "template": " <p:gray>\ue0b1</> \uf00d {{ reason .Code }}"
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "p:ember",
+          "template": " \ue0b1"
+        }
+      ]
+    }
+  ]
+}

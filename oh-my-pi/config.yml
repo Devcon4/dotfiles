@@ -1,0 +1,62 @@
+providers: 
+  webSearchOrder: 
+    - anthropic
+    - perplexity
+    - gemini
+    - codex
+    - xai
+    - zai
+    - exa
+    - tinyfish
+    - jina
+    - kagi
+    - tavily
+    - firecrawl
+    - brave
+    - kimi
+    - parallel
+    - synthetic
+    - searxng
+    - startpage
+    - duckduckgo
+    - ecosia
+    - google
+    - mojeek
+    - public
+modelRoles: 
+  default: anthropic/claude-fable-5
+symbolPreset: nerd
+theme: 
+  dark: park-ranger-dark
+setupVersion: 1
+statusLine: 
+  leftSegments: 
+    - pi
+    - model
+    - mode
+    - collab
+    - path
+    - git
+    - pr
+    - context_pct
+    - usage
+  preset: custom
+  rightSegments: 
+    - session_name
+  segmentOptions: 
+    model: 
+      showThinkingLevel: true
+    path: 
+      abbreviate: true
+      maxLength: 40
+      stripWorkPrefix: true
+    git: 
+      showBranch: true
+      showStaged: true
+      showUnstaged: true
+      showUntracked: true
+dev: 
+  autoqaConsent: denied
+task: 
+  isolation: 
+    mode: auto

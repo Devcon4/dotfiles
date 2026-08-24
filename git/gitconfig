@@ -1,0 +1,15 @@
+[init]
+	defaultBranch = main
+[rerere]
+	enabled = true
+[fetch]
+	prune = true
+[push]
+	autoSetupRemote = true
+[branch]
+	sort = -committerdate
+[diff]
+	colorMoved = zebra
+[user]
+	name = __GIT_NAME__
+	email = __GIT_EMAIL__

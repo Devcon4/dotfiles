@@ -1,0 +1,23 @@
+{
+  "name": "park-ranger-dark",
+  "displayName": "Park Ranger Dark",
+  "description": "National-park dark theme matching the Park Ranger terminal palette (oh-my-posh national-park).",
+  "version": "1.0.0",
+  "publisher": "devyn",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Themes"
+  ],
+  "contributes": {
+    "themes": [
+      {
+        "label": "Park Ranger Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/park-ranger-dark-color-theme.json"
+      }
+    ]
+  }
+}

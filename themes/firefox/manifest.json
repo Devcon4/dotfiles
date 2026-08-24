@@ -1,0 +1,59 @@
+{
+  "manifest_version": 2,
+  "name": "Park Ranger Dark",
+  "description": "National-park dark theme matching the Park Ranger terminal palette (oh-my-posh national-park).",
+  "version": "1.0.1",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "park-ranger-dark@devyn"
+    }
+  },
+  "theme": {
+    "colors": {
+      "frame": "#121614",
+      "frame_inactive": "#121614",
+      "toolbar": "#1B211C",
+      "toolbar_text": "#E9E0CB",
+      "bookmark_text": "#E9E0CB",
+      "icons": "#B5AD97",
+      "icons_attention": "#D8A04A",
+      "button_background_hover": "#2C3A30",
+      "button_background_active": "#35473B",
+
+      "tab_selected": "#1B211C",
+      "tab_text": "#F4EFE2",
+      "tab_background_text": "#B5AD97",
+      "tab_line": "#D9542F",
+
+      "toolbar_field": "#121614",
+      "toolbar_field_text": "#E9E0CB",
+      "toolbar_field_border": "#2C3A30",
+      "toolbar_field_focus": "#1B211C",
+      "toolbar_field_text_focus": "#F4EFE2",
+      "toolbar_field_border_focus": "#6B8CA3",
+      "toolbar_field_highlight": "#35473B",
+      "toolbar_top_separator": "#2C3A30",
+      "toolbar_bottom_separator": "#2C3A30",
+      "toolbar_vertical_separator": "#2C3A30",
+
+      "popup": "#1B211C",
+      "popup_text": "#E9E0CB",
+      "popup_border": "#2C3A30",
+      "popup_highlight": "#2C3A30",
+      "popup_highlight_text": "#F4EFE2",
+
+      "sidebar": "#151A16",
+      "sidebar_text": "#E9E0CB",
+      "sidebar_border": "#2C3A30",
+      "sidebar_highlight": "#2C3A30",
+      "sidebar_highlight_text": "#F4EFE2",
+
+      "ntp_background": "#121614",
+      "ntp_text": "#E9E0CB"
+    },
+    "properties": {
+      "color_scheme": "dark",
+      "content_color_scheme": "dark"
+    }
+  }
+}

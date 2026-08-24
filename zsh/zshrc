@@ -1,0 +1,139 @@
+# Prompt is rendered by oh-my-posh (init at the bottom of this file)
+
+setopt histignorealldups sharehistory
+
+# Use emacs keybindings even if our EDITOR is set to vi
+bindkey -e
+
+# Big history: suggestions and prefix-search are only as good as the corpus
+HISTSIZE=100000
+SAVEHIST=100000
+HISTFILE=~/.zsh_history
+
+# User-generated completions (volta, dotnet, ...) - regenerate with the tool's
+# own `completions`/`complete` command after major upgrades.
+fpath=(~/.local/share/zsh/completions $fpath)
+
+# Use modern completion system. Full compinit (with security audit) at most
+# once a day; otherwise -C trusts the existing ~/.zcompdump. The (#q) glob
+# qualifier needs extended_glob, hence the scoped anonymous function.
+autoload -Uz compinit
+() {
+  setopt local_options extended_glob
+  if [[ -n $HOME/.zcompdump(#qN.mh+24) ]]; then
+    compinit
+  else
+    compinit -C
+  fi
+  # keep a compiled dump so zsh parses bytecode instead of 100KB of text
+  if [[ ! -e $HOME/.zcompdump.zwc || $HOME/.zcompdump -nt $HOME/.zcompdump.zwc ]]; then
+    zcompile $HOME/.zcompdump
+  fi
+}
+
+# npm registers its completion by being sourced, not via fpath. Regenerate
+# with: npm completion >| ~/.cache/zsh/npm-completion.zsh
+[[ -r ~/.cache/zsh/npm-completion.zsh ]] && source ~/.cache/zsh/npm-completion.zsh
+
+zstyle ':completion:*' auto-description 'specify: %d'
+zstyle ':completion:*' completer _expand _complete _correct _approximate
+zstyle ':completion:*' format 'Completing %d'
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*' menu select=2
+# dircolors output is static per coreutils version - cache it instead of
+# forking on every shell start. Delete the cache file to regenerate.
+[[ -r ~/.cache/zsh/dircolors.zsh ]] || { mkdir -p ~/.cache/zsh; dircolors -b >| ~/.cache/zsh/dircolors.zsh; }
+source ~/.cache/zsh/dircolors.zsh
+zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*' list-colors ''
+zstyle ':completion:*' list-prompt %SAt %p: Hit TAB for more, or the character to insert%s
+zstyle ':completion:*' matcher-list '' 'm:{a-z}={A-Z}' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=* l:|=*'
+zstyle ':completion:*' menu select=long
+zstyle ':completion:*' select-prompt %SScrolling active: current selection at %p%s
+zstyle ':completion:*' use-compctl false
+zstyle ':completion:*' verbose true
+
+zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
+zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
+
+# Aliases
+alias cls='clear'
+alias lzd='lazydocker'
+
+# Set up Volta environment variables and update PATH
+VOLTA_HOME="$HOME/.volta"
+export VOLTA_HOME
+
+PATH="$VOLTA_HOME/bin:$PATH"
+
+# .NET global tools (csharp-ls etc.)
+PATH="$PATH:$HOME/.dotnet/tools"
+
+
+# Setup oh-my-posh
+PATH="$HOME/.local/bin:$PATH"
+
+
+export PATH
+
+# Initialize oh-my-posh prompt (must come after PATH export).
+# Theme master lives on ext4 (~/.config/oh-my-posh); the Windows PowerShell
+# profiles read the same file via \\wsl.localhost. Init output is cached like
+# the Windows profiles do - delete the cache after an oh-my-posh upgrade.
+_omp_cache=~/.cache/zsh/omp-init.zsh
+if [[ ! -r $_omp_cache ]]; then
+  mkdir -p ~/.cache/zsh
+  oh-my-posh init zsh --config ~/.config/oh-my-posh/national-park.omp.json --print >| $_omp_cache
+fi
+source $_omp_cache
+unset _omp_cache
+
+# QoL: type a bare path to cd; a leading space keeps a command out of history
+setopt autocd hist_ignore_space
+
+# eza: ls with nerd-font icons (=auto: icons only when output is a tty)
+alias ls='eza --icons=auto --group-directories-first'
+alias ll='eza -l --icons=auto --group-directories-first --git'
+alias la='eza -la --icons=auto --group-directories-first --git'
+alias lt='eza --tree --icons=auto --level=2'
+
+# zoxide: `z <fuzzy>` jumps to frecent dirs (e.g. `z mdm` from anywhere),
+# `zi` picks interactively via fzf. Init cached like omp.
+[[ -r ~/.cache/zsh/zoxide-init.zsh ]] || zoxide init zsh >| ~/.cache/zsh/zoxide-init.zsh
+source ~/.cache/zsh/zoxide-init.zsh
+
+# Line-editor extras are useless without a terminal, and fzf's option-restore
+# eval spams "can't change option: zle" in TTY-less interactive shells
+# (VS Code's env probe and agent harnesses run `zsh -ilc ...` with no PTY).
+# `[[ -o zle ]]` is not enough: forced-interactive zsh reports zle as on
+# even without a TTY, but re-setting the option there fails.
+if [[ -t 0 ]]; then
+  # fzf: Ctrl+R fuzzy history, Ctrl+T fuzzy files, Alt+C fuzzy cd
+  source ~/.local/share/fzf/shell/key-bindings.zsh
+  source ~/.local/share/fzf/shell/completion.zsh
+
+  # Ghost-text suggestions from history, like PSReadLine's inline predictions.
+  # Right/End accepts the whole suggestion; Ctrl+Right accepts one word.
+  source ~/.local/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+  bindkey '^[[1;5C' forward-word
+  bindkey '^[[1;5D' backward-word
+
+  # Up/Down search history filtered by the prefix already typed (PSReadLine-style)
+  autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+  zle -N up-line-or-beginning-search
+  zle -N down-line-or-beginning-search
+  bindkey '^[[A' up-line-or-beginning-search
+  bindkey '^[[B' down-line-or-beginning-search
+
+  # Command syntax highlighting (valid green / invalid red). Must stay last.
+  source ~/.local/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
+
+# Cluster access split: interactive dev shells get admin; everything else
+# (agents, scripts, non-interactive shells) defaults to readonly ~/.kube/config
+export KUBECONFIG="$HOME/.kube/strix-admin.yml"
+alias kro='kubectl --kubeconfig ~/.kube/config'   # explicit readonly when needed
+# omp inherits this shell's env -- launch it readonly so agents (and their
+# eval kernels / subprocesses) never hold admin. The kube-admin-guard
+# extension re-enforces this per tool call as defense in depth.
+alias omp='KUBECONFIG="$HOME/.kube/config" omp'

@@ -1,0 +1,37 @@
+# WSL2 global config -- applies to all distros + wslc sessions
+# Apply with: wsl --shutdown (from PowerShell), then reopen terminals.
+
+[wsl2]
+# NAT is the only mode that passes traffic on this machine (tested
+# 2026-08-03 on WSL 2.9.4 under Centeva AOVPN force tunnel + NCP
+# Secure Client):
+#   - Consomme (pre-release): zero egress, even with firewall=false.
+#   - mirrored: routes/DNS mirror correctly but ALL egress dropped,
+#     including ping to the LAN gateway -> host WFP filters (NCP)
+#     drop mirrored-flow traffic. Not config-fixable.
+# localhost interop under NAT:
+#   WSL:8080 -> Windows localhost:8080 works (localhostForwarding).
+#   Windows -> WSL: bind the Windows server to 0.0.0.0 and hit the
+#   NAT gateway IP from WSL (ip route show default).
+networkingMode=NAT
+
+# Use virtiofs instead of 9P/drvfs for /mnt/* Windows drives (pre-release).
+# Verify after restart: findmnt -no FSTYPE /mnt/d  ->  virtiofs
+virtiofs=true
+
+# Resolve DNS via Windows instead of a virtualized resolver -- avoids
+# VPN DNS breakage, pairs with mirrored mode
+dnsTunneling=true
+
+# Inherit Windows proxy settings into WSL automatically
+autoProxy=true
+
+# Apply Windows Firewall (incl. Hyper-V firewall) rules to WSL traffic.
+# REQUIRED (true) for mirrored mode.
+firewall=true
+
+[experimental]
+# Return unused memory to Windows gradually instead of holding it
+autoMemoryReclaim=gradual
+# Auto-shrink the WSL virtual disk as files are deleted
+sparseVhd=true
