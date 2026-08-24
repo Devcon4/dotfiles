@@ -1,0 +1,4 @@
+# machine identity -- template is .env.template
+.env
+# firefox theme build output (themes/firefox/build.sh)
+web-ext-artifacts/
