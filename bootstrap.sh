@@ -89,7 +89,21 @@ render_to oh-my-posh/national-park.omp.json "$HOME/.config/oh-my-posh/national-p
 mkdir -p "$HOME/.omp/agent"
 cp oh-my-pi/config.yml "$HOME/.omp/agent/"
 render_to oh-my-pi/lsp.json "$HOME/.omp/agent/lsp.json"
-cp -r oh-my-pi/rules oh-my-pi/extensions oh-my-pi/themes "$HOME/.omp/agent/"
+cp -r oh-my-pi/rules oh-my-pi/skills oh-my-pi/hooks oh-my-pi/extensions oh-my-pi/themes "$HOME/.omp/agent/"
+# omp apps: user apps are a symlink into this repo; the host plugin is linked so edits here are live
+if [[ -L $HOME/.omp/agent/apps || ! -e $HOME/.omp/agent/apps ]]; then
+  ln -sfn "$PWD/oh-my-pi/apps" "$HOME/.omp/agent/apps"
+else
+  echo "    ~/.omp/agent/apps is a real directory; move its apps into oh-my-pi/apps/ and re-run"
+fi
+if ! have omp; then
+  echo "    omp not installed; afterwards run: omp plugin link $PWD/oh-my-pi/plugins/apphost"
+elif omp plugin list 2>/dev/null | grep -q 'omp-apphost'; then
+  skip "omp-apphost plugin"
+else
+  step "linking the omp-apphost plugin"
+  omp plugin link "$PWD/oh-my-pi/plugins/apphost"
+fi
 # stale init caches would resurrect the old prompt/tool versions
 rm -f "$HOME/.cache/zsh/omp-init.zsh" "$HOME/.cache/zsh/zoxide-init.zsh"
 

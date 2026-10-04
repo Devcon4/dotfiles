@@ -1,0 +1,22 @@
+{
+  "_comment": "Copy this file to docs/moodboards/boards/<kebab-slug>.json and edit. Only `url` is required per image. The first image lands at the centre of the mosaic — pick the strongest reference. Image dimensions are measured at load time; do NOT include width/height.",
+  "topic": "Example Moodboard",
+  "subtitle": "replace this and the images array",
+  "images": [
+    {
+      "url": "https://picsum.photos/seed/a/600/400",
+      "title": "Sample landscape",
+      "source": "https://picsum.photos",
+      "tags": ["sample"],
+      "note": "Replace with real refs."
+    },
+    {
+      "url": "https://picsum.photos/seed/b/400/600",
+      "title": "Sample portrait"
+    },
+    {
+      "url": "https://picsum.photos/seed/c/500/500",
+      "title": "Sample square"
+    }
+  ]
+}

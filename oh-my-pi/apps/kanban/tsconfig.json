@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "typeRoots": [
+      "node_modules/@types",
+      "/home/dev/.cache/typescript/7.0/node_modules/@types"
+    ]
+  },
+  "include": ["src", "serve.ts", "store.ts", "kb.ts", "client.ts", "vite.config.ts"]
+}

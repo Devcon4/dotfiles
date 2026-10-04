@@ -73,6 +73,9 @@ PATH="$PATH:$HOME/.dotnet/tools"
 # Setup oh-my-posh
 PATH="$HOME/.local/bin:$PATH"
 
+# CLIs of omp apps (kb, ...); the omp app host writes these shims
+PATH="$PATH:$HOME/.local/share/omp-apps/bin"
+
 
 export PATH
 

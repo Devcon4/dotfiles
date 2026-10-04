@@ -1,0 +1,19 @@
+{
+  "host": 1,
+  "name": "kanban",
+  "description": "Local kanban board for tracking work across repos",
+  "command": "board",
+  "port": 5174,
+  "config": ".omp/apps/kanban.json",
+  "start": ["node", "serve.ts"],
+  "build": {
+    "run": ["node", "build.js"],
+    "output": "dist/index.html",
+    "inputs": ["src", "index.html", "vite.config.ts", "package.json"]
+  },
+  "init": ["node", "${APP_DIR}/kb.ts", "init"],
+  "digest": ["node", "${APP_DIR}/kb.ts", "digest"],
+  "bin": {
+    "kb": ["node", "${APP_DIR}/kb.ts"]
+  }
+}

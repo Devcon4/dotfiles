@@ -2,3 +2,7 @@
 .env
 # firefox theme build output (themes/firefox/build.sh)
 web-ext-artifacts/
+# omp app dependencies and build output (oh-my-pi/apps/<app>/)
+oh-my-pi/apps/**/node_modules/
+oh-my-pi/apps/**/dist/
+__pycache__/

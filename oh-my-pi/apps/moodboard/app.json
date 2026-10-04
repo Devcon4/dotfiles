@@ -1,0 +1,13 @@
+{
+  "host": 1,
+  "name": "moodboard",
+  "description": "Visual reference moodboards for any topic",
+  "command": "moodboard",
+  "port": 5173,
+  "config": ".omp/apps/moodboard.json",
+  "start": ["bun", "serve.ts"],
+  "init": ["bun", "${APP_DIR}/cli.ts", "init"],
+  "bin": {
+    "moodboard": ["bun", "${APP_DIR}/cli.ts"]
+  }
+}
