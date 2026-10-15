@@ -1,0 +1,11 @@
+{
+  "host": 1,
+  "name": "hello",
+  "description": "Example omp app: lists the repos that opted in",
+  "command": "hello",
+  "port": 5199,
+  "start": ["node", "server.ts"],
+  "init": ["node", "${APP_DIR}/cli.ts", "init"],
+  "digest": ["node", "${APP_DIR}/cli.ts", "digest"],
+  "bin": { "hello": ["node", "${APP_DIR}/cli.ts"] }
+}

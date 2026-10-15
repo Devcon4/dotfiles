@@ -55,6 +55,9 @@ statusLine:
       showStaged: true
       showUnstaged: true
       showUntracked: true
+skills: 
+  customDirectories: 
+    - ~/.omp/agent/apps
 dev: 
   autoqaConsent: denied
 task: 

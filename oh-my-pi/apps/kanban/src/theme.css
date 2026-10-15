@@ -1,0 +1,58 @@
+/* Kanban — design tokens + light-DOM base. GitHub-Primer-flavored dark:
+ * hairline dividers, flat surfaces, restrained radii. Component visuals
+ * live in shadow styles; only tokens (custom properties pierce shadow
+ * boundaries) and document chrome belong here. */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-2: #1c2128;
+  --surface-3: #22272e;
+  --border: #30363d;
+  --border-muted: #21262d;
+
+  --fg: #e6edf3;
+  --fg-muted: #8b949e;
+  --fg-subtle: #6e7681;
+
+  --accent: #e8a13a; /* per-board; kb-app overrides inline */
+  --danger: #f85149;
+  --success: #57ab5a;
+  --warn: #d29922;
+  --focus: rgba(56, 139, 253, 0.5);
+
+  --radius: 6px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  font-family: var(--font);
+  font-feature-settings: "tnum" 1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  overflow: hidden;
+}
+
+/* MUST mirror kb-app's :host layout — document rules outrank :host, so a
+ * plain `display:block` here silently breaks the shell's flex column
+ * (auto-height main → side panels grow past the viewport, no inner scroll). */
+kb-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+::selection {
+  background: rgba(232, 161, 58, 0.35);
+}

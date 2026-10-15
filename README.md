@@ -25,9 +25,14 @@ Everything here is a verbatim copy of the live config.
 | `oh-my-posh/national-park.omp.json` | `~/.config/oh-my-posh/` | Prompt theme — **single master copy**, read by zsh *and* both Windows PowerShells |
 | `oh-my-pi/config.yml` | `~/.omp/agent/config.yml` | Oh My Pi agent config (model roles, status line, theme) |
 | `oh-my-pi/lsp.json` | `~/.omp/agent/lsp.json` | LSP servers for the agent (tsgo, csharp-ls) |
-| `oh-my-pi/rules/` | `~/.omp/agent/rules/` | Always-apply agent rules (git + kube credential policy) |
-| `oh-my-pi/extensions/` | `~/.omp/agent/extensions/` | Agent extensions: `kube-admin-guard` (blocks admin-credential use) and `launch-viewer` (adds the `/tail` process/docker log viewer — see CHEATSHEET) |
+| `oh-my-pi/rules/` | `~/.omp/agent/rules/` | Always-apply agent rules: git and kube credential policy, `plain-voice`, `gh-writing`, `adr`, `minimal-comments`. A repo's `.omp/rules/<name>.md` replaces the user rule of the same name for that repo |
+| `oh-my-pi/skills/` | `~/.omp/agent/skills/` | User-level skills every repo sees: `scratch-docs`, `gh-writing`, `plain-voice` and `adr`. On a name collision with a repo's `.github/skills/` copy, the user copy keeps `skill://<name>` and the repo copy gets a namespaced name |
+| `oh-my-pi/agents/` | `~/.omp/agent/agents/` | User-level subagent roles for executing a scratch-docs `spec`: `lead` (runs one spec, spawns implementers, answers their questions, only writer of the spec and its board cards during the run), `implementer` (builds one unit inside its file list and asks the lead instead of guessing) and `oracle` (verifies one finished unit against its acceptance criteria and returns pass, fail or blocked with proof) |
+| `oh-my-pi/hooks/` | `~/.omp/agent/hooks/` | `pre/gh-writing.ts` blocks `gh pr`/`gh issue` writes until the session has read `skill://gh-writing` |
+| `oh-my-pi/extensions/` | `~/.omp/agent/extensions/` | Agent extensions: `kube-admin-guard` (blocks admin-credential use), `launch-viewer` (adds the `/tail` process/docker log viewer, see CHEATSHEET) and `scratch-digest` (at session start, tells the model which `docs/scratch` files are unfinished, done but not deleted, or missing a header) |
 | `oh-my-pi/themes/` | `~/.omp/agent/themes/` | Park Ranger Dark theme for the omp TUI |
+| `oh-my-pi/plugins/apphost/` | linked with `omp plugin link` (`~/.omp/plugins/node_modules/omp-apphost`) | The omp app host: runs local web apps for the repos that opt into them (see "Local apps" below), plus the `omp-apps` skill for writing one |
+| `oh-my-pi/apps/` | `~/.omp/agent/apps` (a symlink to this folder) | User apps the host runs, one folder per app with an `app.json` and the app's own `SKILL.md`: `kanban` (`/board`, the `kb` CLI) and `moodboard` (`/moodboard`, the `moodboard` CLI). This repo opts into kanban (`.omp/apps/kanban.json`); its `docs/kanban/` holds the `kanban-roadmap` board for these tools |
 | `wsl/wsl.conf` | `/etc/wsl.conf` (in-distro) | systemd on, default user |
 | `windows/wslconfig` | `C:\Users\<you>\.wslconfig` | WSL2 VM settings — networking, virtiofs, memory reclaim |
 | `windows/windows-terminal.settings.json` | `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json` | Profiles, Park Ranger Dark scheme, keybindings |
@@ -116,6 +121,25 @@ twice on every `code .`. The fix in `zsh/zshrc`: all line-editor extras
 (fzf bindings, autosuggestions, history search, syntax highlighting) sit
 behind a `[[ -t 0 ]]` guard — they're useless without a terminal anyway.
 Bonus: TTY-less shells start faster since they skip four plugin sources.
+
+### Local apps (the omp app host)
+Some tools are small web apps with their own server, like kanban boards and
+moodboards. The `omp-apphost` plugin runs them for every repo that opts in:
+- An app is a folder with an `app.json` manifest. User apps live in
+  `oh-my-pi/apps/` and are available everywhere; a repo can carry its own in
+  `<repo>/.omp/apps/<name>/`.
+- A repo turns a user app on by committing the app's config file (by default
+  `.omp/apps/<name>.json`). The host only checks that the file exists; the app
+  reads it, so each app picks its own fields and words.
+- One server per app serves every opted-in repo. `/<command>` opens the
+  current repo's page; `/apps` lists apps, servers and opted-in repos.
+- Apps can add a session-start digest for the model and CLI commands, which
+  the host writes as shims to `~/.local/share/omp-apps/bin` (on PATH via
+  `zsh/zshrc`). A repo app's digest and CLI stay off until `/apps trust <app>`.
+- The plugin is linked, not copied, and `~/.omp/agent/apps` is a symlink, so
+  edits in this repo are live and `sync.sh` has nothing to capture. The app
+  skills are found through `skills.customDirectories` in `config.yml`.
+- To write or port an app, read `skill://omp-apps`.
 
 ## Setting up a new machine
 

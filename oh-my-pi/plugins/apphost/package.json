@@ -1,0 +1,10 @@
+{
+  "name": "omp-apphost",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Runs local web apps (kanban, moodboard, ...) for the repos that opt into them, and wires them into omp.",
+  "omp": {
+    "extensions": ["extension/index.ts"]
+  }
+}

@@ -1,0 +1,665 @@
+{
+  "name": "Kanban Roadmap",
+  "slug": "kanban-roadmap",
+  "accent": "#986ee2",
+  "archived": false,
+  "brief": "",
+  "nextCardId": 30,
+  "labels": [
+    {
+      "id": "shipped",
+      "name": "shipped",
+      "color": "#57ab5a"
+    },
+    {
+      "id": "ux",
+      "name": "UX",
+      "color": "#539bf5"
+    },
+    {
+      "id": "feature",
+      "name": "feature",
+      "color": "#986ee2"
+    },
+    {
+      "id": "infra",
+      "name": "infra",
+      "color": "#8b949e"
+    }
+  ],
+  "columns": [
+    {
+      "id": "backlog",
+      "name": "Backlog",
+      "color": "#8b949e",
+      "wip": 0,
+      "done": false
+    },
+    {
+      "id": "todo",
+      "name": "Todo",
+      "color": "#539bf5",
+      "wip": 0,
+      "done": false
+    },
+    {
+      "id": "doing",
+      "name": "In Progress",
+      "color": "#e8a13a",
+      "wip": 0,
+      "done": false
+    },
+    {
+      "id": "done",
+      "name": "Done",
+      "color": "#57ab5a",
+      "wip": 0,
+      "done": true
+    }
+  ],
+  "order": {
+    "backlog": [
+      "c15",
+      "c16",
+      "c17",
+      "c18",
+      "c19",
+      "c20",
+      "c21",
+      "c22",
+      "c23",
+      "c24",
+      "c25"
+    ],
+    "todo": [],
+    "doing": [],
+    "done": [
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "c7",
+      "c8",
+      "c9",
+      "c10",
+      "c12",
+      "c13",
+      "c14",
+      "c11",
+      "c26",
+      "c27",
+      "c28",
+      "c29"
+    ]
+  },
+  "cards": {
+    "c1": {
+      "id": "c1",
+      "num": 1,
+      "title": "probe",
+      "body": "",
+      "labels": [],
+      "size": null,
+      "assignee": null,
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": true,
+      "createdAt": "2026-07-05T07:37:05.102Z",
+      "updatedAt": "2026-07-05T07:37:56.574Z",
+      "completedAt": "2026-07-05T07:37:05.102Z"
+    },
+    "c2": {
+      "id": "c2",
+      "num": 2,
+      "title": "probe2",
+      "body": "Blocker chips with reverse `blocks` line; `#num` refs.",
+      "labels": [
+        "shipped",
+        "feature"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": true,
+      "createdAt": "2026-07-05T07:37:28.462Z",
+      "updatedAt": "2026-07-05T07:37:56.632Z",
+      "completedAt": "2026-07-05T07:37:28.462Z"
+    },
+    "c3": {
+      "id": "c3",
+      "num": 3,
+      "title": "Per-board write lock + unique tmp files",
+      "body": "Concurrent PATCHes corrupted two boards during adversarial testing (interleaved writes on a shared tmp path). All mutations now serialize per slug.",
+      "labels": [
+        "shipped",
+        "infra"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:22.386Z",
+      "updatedAt": "2026-07-05T07:38:22.386Z",
+      "completedAt": "2026-07-05T07:38:22.386Z"
+    },
+    "c4": {
+      "id": "c4",
+      "num": 4,
+      "title": "Surface unreadable boards (API/home/CLI)",
+      "body": "Corrupt board files were silently hidden — data loss was invisible. Now: home row + CLI warning + API `unreadable[]`.",
+      "labels": [
+        "shipped",
+        "infra"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:22.442Z",
+      "updatedAt": "2026-07-05T07:38:22.442Z",
+      "completedAt": "2026-07-05T07:38:22.442Z"
+    },
+    "c5": {
+      "id": "c5",
+      "num": 5,
+      "title": "Card relations (blockedBy) + #ref links",
+      "body": "Blocker chips with reverse `blocks` line; `#num` in markdown renders as clickable card refs; blocked state derives from open blockers.",
+      "labels": [
+        "shipped",
+        "feature"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:22.507Z",
+      "updatedAt": "2026-07-05T07:38:22.507Z",
+      "completedAt": "2026-07-05T07:38:22.507Z"
+    },
+    "c6": {
+      "id": "c6",
+      "num": 6,
+      "title": "Activity log + actor attribution",
+      "body": "Append-only `activity/<slug>.jsonl`; every mutation logs who (user/ai) did what; per-card trail in panel; `kb activity`.",
+      "labels": [
+        "shipped",
+        "feature"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:22.567Z",
+      "updatedAt": "2026-07-05T07:38:22.567Z",
+      "completedAt": "2026-07-05T07:38:22.567Z"
+    },
+    "c7": {
+      "id": "c7",
+      "num": 7,
+      "title": "Session digest strip",
+      "body": "Since-you-were-here summary from the activity tail + localStorage watermark.",
+      "labels": [
+        "shipped",
+        "feature"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:22.646Z",
+      "updatedAt": "2026-07-05T07:38:22.646Z",
+      "completedAt": "2026-07-05T07:38:22.646Z"
+    },
+    "c8": {
+      "id": "c8",
+      "num": 8,
+      "title": "Global search across boards",
+      "body": "`/api/search` + homepage search box with board/column context and snippets; `kb find`.",
+      "labels": [
+        "shipped",
+        "feature"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:22.723Z",
+      "updatedAt": "2026-07-05T07:38:22.723Z",
+      "completedAt": "2026-07-05T07:38:22.723Z"
+    },
+    "c9": {
+      "id": "c9",
+      "num": 9,
+      "title": "Composer quick-syntax",
+      "body": "`title #label !size @me ^column` parsed inline on Enter.",
+      "labels": [
+        "shipped",
+        "feature"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:22.807Z",
+      "updatedAt": "2026-07-05T07:38:22.807Z",
+      "completedAt": "2026-07-05T07:38:22.807Z"
+    },
+    "c10": {
+      "id": "c10",
+      "num": 10,
+      "title": "Board templates",
+      "body": "`simple` + `asset-production` presets in UI create row and `kb new-board --template`.",
+      "labels": [
+        "shipped",
+        "feature"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:22.879Z",
+      "updatedAt": "2026-07-05T07:38:22.879Z",
+      "completedAt": "2026-07-05T07:38:22.879Z"
+    },
+    "c11": {
+      "id": "c11",
+      "num": 11,
+      "title": "Task-line to card promotion",
+      "body": "Hover the split button on any checklist line to spin it into its own card; the line becomes a `#num` ref.",
+      "labels": [
+        "shipped",
+        "feature"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:22.958Z",
+      "updatedAt": "2026-07-05T15:12:40.827Z",
+      "completedAt": "2026-07-05T15:12:40.827Z"
+    },
+    "c12": {
+      "id": "c12",
+      "num": 12,
+      "title": "Board brief",
+      "body": "Pinned markdown context strip; editable in settings; `kb brief`. The AI reads it at session start.",
+      "labels": [
+        "shipped",
+        "feature"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:23.014Z",
+      "updatedAt": "2026-07-05T07:38:23.014Z",
+      "completedAt": "2026-07-05T07:38:23.014Z"
+    },
+    "c13": {
+      "id": "c13",
+      "num": 13,
+      "title": "Label rollups + kb stats",
+      "body": "Per-label done/total + tasks in `kb stats`; trustworthy `N of M` column counts under filter; OR label filtering.",
+      "labels": [
+        "shipped",
+        "ux"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:23.081Z",
+      "updatedAt": "2026-07-05T07:38:23.081Z",
+      "completedAt": "2026-07-05T07:38:23.081Z"
+    },
+    "c14": {
+      "id": "c14",
+      "num": 14,
+      "title": "User-testing UX fixes",
+      "body": "Label add/remove affordance, labeled Archive button, blocked reason on card face, onboarding copy, WIP field label, rename undo toast, no home flash, stale-board-chrome fix.",
+      "labels": [
+        "shipped",
+        "ux"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:23.128Z",
+      "updatedAt": "2026-07-05T07:38:23.128Z",
+      "completedAt": "2026-07-05T07:38:23.128Z"
+    },
+    "c15": {
+      "id": "c15",
+      "num": 15,
+      "title": "Now/Next focus view",
+      "body": "One-keypress view: in-progress + blocked + top-3 of first column.",
+      "labels": [
+        "feature"
+      ],
+      "size": null,
+      "assignee": null,
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": false,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:23.184Z",
+      "updatedAt": "2026-07-05T07:38:23.184Z",
+      "completedAt": null
+    },
+    "c16": {
+      "id": "c16",
+      "num": 16,
+      "title": "Bulk multi-select operations",
+      "body": "Select many cards, then move/label/complete as a set.",
+      "labels": [
+        "feature"
+      ],
+      "size": null,
+      "assignee": null,
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": false,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:23.244Z",
+      "updatedAt": "2026-07-05T07:38:23.244Z",
+      "completedAt": null
+    },
+    "c17": {
+      "id": "c17",
+      "num": 17,
+      "title": "Density toggle (compact mode)",
+      "body": "Cards-per-screen at 30+; hide non-essential chips.",
+      "labels": [
+        "ux"
+      ],
+      "size": null,
+      "assignee": null,
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": false,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:23.305Z",
+      "updatedAt": "2026-07-05T07:38:23.305Z",
+      "completedAt": null
+    },
+    "c18": {
+      "id": "c18",
+      "num": 18,
+      "title": "Snooze / defer cards",
+      "body": "Hide until a date or until a blocker completes; auto-return.",
+      "labels": [
+        "feature"
+      ],
+      "size": null,
+      "assignee": null,
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": false,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:23.353Z",
+      "updatedAt": "2026-07-05T07:38:23.354Z",
+      "completedAt": null
+    },
+    "c19": {
+      "id": "c19",
+      "num": 19,
+      "title": "Column automation micro-rules",
+      "body": "e.g. enter In Progress: assignee defaults to me.",
+      "labels": [
+        "feature"
+      ],
+      "size": null,
+      "assignee": null,
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": false,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:23.403Z",
+      "updatedAt": "2026-07-05T07:38:23.403Z",
+      "completedAt": null
+    },
+    "c20": {
+      "id": "c20",
+      "num": 20,
+      "title": "Burn-up sparkline",
+      "body": "Per-board completed-over-time from completedAt; zero new storage.",
+      "labels": [
+        "feature"
+      ],
+      "size": null,
+      "assignee": null,
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": false,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:23.737Z",
+      "updatedAt": "2026-07-05T07:38:23.737Z",
+      "completedAt": null
+    },
+    "c21": {
+      "id": "c21",
+      "num": 21,
+      "title": "Session undo stack",
+      "body": "Revert the last N mutations in the UI — accidental-drag insurance.",
+      "labels": [
+        "ux"
+      ],
+      "size": null,
+      "assignee": null,
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": false,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:24.418Z",
+      "updatedAt": "2026-07-05T07:38:24.419Z",
+      "completedAt": null
+    },
+    "c22": {
+      "id": "c22",
+      "num": 22,
+      "title": "Card cover images",
+      "body": "Optional image URL as a slim banner for asset cards.",
+      "labels": [
+        "feature"
+      ],
+      "size": null,
+      "assignee": null,
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": false,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:25.491Z",
+      "updatedAt": "2026-07-05T07:38:25.492Z",
+      "completedAt": null
+    },
+    "c23": {
+      "id": "c23",
+      "num": 23,
+      "title": "Moodboard cross-links",
+      "body": "Markdown links work today; consider a first-class field + hover preview.",
+      "labels": [
+        "feature"
+      ],
+      "size": null,
+      "assignee": null,
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": false,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:26.857Z",
+      "updatedAt": "2026-07-05T07:38:26.857Z",
+      "completedAt": null
+    },
+    "c24": {
+      "id": "c24",
+      "num": 24,
+      "title": "Blocker autocomplete by title",
+      "body": "The blocker input takes numbers only; add title-substring autocomplete.",
+      "labels": [
+        "ux"
+      ],
+      "size": null,
+      "assignee": null,
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": false,
+      "archived": false,
+      "createdAt": "2026-07-05T07:38:27.753Z",
+      "updatedAt": "2026-07-05T07:38:27.754Z",
+      "completedAt": null
+    },
+    "c25": {
+      "id": "c25",
+      "num": 25,
+      "title": "Composer template picker",
+      "body": "UI-side counterpart of skills/kanban/templates/*.md — a template select in the card composer / panel empty-description state, so the user gets bug/feature/asset skeletons without the CLI. Templates already exist as files; this is just surfacing.",
+      "labels": [
+        "feature"
+      ],
+      "size": "S",
+      "assignee": null,
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": false,
+      "archived": false,
+      "createdAt": "2026-07-05T15:21:12.059Z",
+      "updatedAt": "2026-07-05T15:33:10.566Z",
+      "completedAt": null
+    },
+    "c26": {
+      "id": "c26",
+      "num": 26,
+      "title": "Card images (paste + attach + served files)",
+      "body": "Screenshots/images on cards: paste into the description editor (uploads + inserts markdown at the caret), or `kb attach <board> <card> <file> [--alt text]`. Bytes are FILES at `docs/kanban/images/<board>/` served at `/images/…` — never base64 in board JSON (bloats every read, wrecks diffs). 10MB cap, png/jpg/webp/gif, traversal-guarded, immutable-cached (timestamped names).",
+      "labels": [
+        "shipped",
+        "feature"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T15:33:10.854Z",
+      "updatedAt": "2026-07-05T15:33:10.855Z",
+      "completedAt": "2026-07-05T15:33:10.855Z"
+    },
+    "c27": {
+      "id": "c27",
+      "num": 27,
+      "title": "Workflow shims (client.py / client.ts)",
+      "body": "Importable clients for eval-orchestrated workflows: `skills/kanban/client.py` (zero-dep urllib) and `client.ts` (Bun/node fetch), one mirrored surface (reads, CRUD, link, brief, attach, search, activity, ensure_up). **Concurrency rule encoded:** all writes go through the HTTP API — the server is the single process holding the per-board write lock; parallel workers writing files/CLI directly can lose updates cross-process. Verified: 6 concurrent workers × mixed mutations on one board, zero lost updates, order/activity integrity gates green.",
+      "labels": [
+        "shipped",
+        "feature"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T15:39:59.864Z",
+      "updatedAt": "2026-07-05T15:39:59.865Z",
+      "completedAt": "2026-07-05T15:39:59.865Z"
+    },
+    "c28": {
+      "id": "c28",
+      "num": 28,
+      "title": "HTML mockups (live sandboxed iframe previews)",
+      "body": "UX/UI design cards can carry a **live, clickable** HTML mockup: a link to `/mockups/<board>/<name>.html` in the body renders as a sandboxed iframe (`allow-scripts allow-forms`, no same-origin) in the panel — card face shows a 🖼 chip. Files at `docs/kanban/mockups/<board>/`, served at `/mockups/…`, shared `_base.css` for on-brand tokens. Author from scratch (self-contained, inline data/fonts-with-fallbacks), link via `kb mockup` / shim `mockup()`. Reference: discovery board (#2/#3/#4 bakeoff = star-web/tech-tree/journal). Pattern in SKILL 'HTML mockups on cards'.",
+      "labels": [
+        "shipped",
+        "feature"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-07-05T22:08:46.680Z",
+      "updatedAt": "2026-07-05T22:11:21.969Z",
+      "completedAt": "2026-07-05T22:08:46.681Z"
+    },
+    "c29": {
+      "id": "c29",
+      "num": 29,
+      "title": "Route kb and shims through the server only",
+      "body": "Every `kb` command and both shims (`client.ts`, `client.py`) now go through the server's HTTP API. `kb` starts the server and records the repo's opt-in when the server is down, so no process reads or writes board JSON directly.\n\n- New server endpoints that run inside the per-board lock: `POST card/<ref>/blockers` (link/unlink), `PUT label/<id>`, `POST card/<ref>/append`, `POST card/<ref>/attach` (image + body in one step), `POST card/<ref>/mockup`, `GET template/<name>`, `GET digest?since=`.\n- Card refs accept `c12`, `12` or `#12` server-side, so writes are one request.\n- `POST /api/images` takes JSON (base64). The old raw-image upload was rejected by the host's JSON-only body rule (415), so UI paste failed; paste now works.\n- New `kb append` for proof and notes.\n- `kb digest` only advances the \"since last session\" marker with `--session`, which the host passes. Agents running `kb digest` no longer hide user actions from the next session.\n\n**Proof** (throwaway repo in /tmp, 20 concurrent `kb add` per trial):\n\n| Trial | Old kb (direct file writes) | New kb (server) |\n| --- | --- | --- |\n| 1 | 12 of 20 cards | 20 of 20 |\n| 2 | 12 of 20 | 20 of 20 |\n| 3 | 10 of 20 | 20 of 20 |\n\nConcurrent compound edits on one card with the new kb: 10/10 blockers, 10/10 labels, 8/8 attachments, 0 failures. Every CLI command, both shims and a browser paste into the card editor were exercised; `tsc --noEmit` is clean.\n",
+      "labels": [
+        "shipped",
+        "infra"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-10-15T01:03:59.176Z",
+      "updatedAt": "2026-10-15T01:03:59.176Z",
+      "completedAt": "2026-10-15T01:03:59.176Z"
+    }
+  },
+  "createdAt": "2026-07-05T07:36:21.654Z",
+  "updatedAt": "2026-10-15T01:03:59.176Z"
+}

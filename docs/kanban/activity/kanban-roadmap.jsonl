@@ -1,0 +1,41 @@
+{"at":"2026-07-05T07:36:21.685Z","actor":"ai","verb":"board-create","summary":"created board \"Kanban Roadmap\""}
+{"at":"2026-07-05T07:36:22.027Z","actor":"ai","verb":"board-edit","summary":"edited board settings"}
+{"at":"2026-07-05T07:36:22.364Z","actor":"ai","verb":"board-edit","summary":"edited board settings"}
+{"at":"2026-07-05T07:36:22.701Z","actor":"ai","verb":"board-edit","summary":"edited board settings"}
+{"at":"2026-07-05T07:36:23.052Z","actor":"ai","verb":"board-edit","summary":"edited board settings"}
+{"at":"2026-07-05T07:37:05.137Z","actor":"ai","verb":"card-add","card":"c1","num":1,"summary":"added #1 \"probe\" to Done"}
+{"at":"2026-07-05T07:37:28.490Z","actor":"ai","verb":"card-add","card":"c2","num":2,"summary":"added #2 \"probe2\" to Done"}
+{"at":"2026-07-05T07:37:56.600Z","actor":"ai","verb":"card-archive","card":"c1","num":1,"summary":"archived #1 \"probe\""}
+{"at":"2026-07-05T07:37:56.654Z","actor":"ai","verb":"card-archive","card":"c2","num":2,"summary":"archived #2 \"probe2\""}
+{"at":"2026-07-05T07:38:22.408Z","actor":"ai","verb":"card-add","card":"c3","num":3,"summary":"added #3 \"Per-board write lock + unique tmp files\" to Done"}
+{"at":"2026-07-05T07:38:22.474Z","actor":"ai","verb":"card-add","card":"c4","num":4,"summary":"added #4 \"Surface unreadable boards (API/home/CLI)\" to Done"}
+{"at":"2026-07-05T07:38:22.533Z","actor":"ai","verb":"card-add","card":"c5","num":5,"summary":"added #5 \"Card relations (blockedBy) + #ref links\" to Done"}
+{"at":"2026-07-05T07:38:22.601Z","actor":"ai","verb":"card-add","card":"c6","num":6,"summary":"added #6 \"Activity log + actor attribution\" to Done"}
+{"at":"2026-07-05T07:38:22.680Z","actor":"ai","verb":"card-add","card":"c7","num":7,"summary":"added #7 \"Session digest strip\" to Done"}
+{"at":"2026-07-05T07:38:22.754Z","actor":"ai","verb":"card-add","card":"c8","num":8,"summary":"added #8 \"Global search across boards\" to Done"}
+{"at":"2026-07-05T07:38:22.847Z","actor":"ai","verb":"card-add","card":"c9","num":9,"summary":"added #9 \"Composer quick-syntax\" to Done"}
+{"at":"2026-07-05T07:38:22.924Z","actor":"ai","verb":"card-add","card":"c10","num":10,"summary":"added #10 \"Board templates\" to Done"}
+{"at":"2026-07-05T07:38:22.980Z","actor":"ai","verb":"card-add","card":"c11","num":11,"summary":"added #11 \"Task-line to card promotion\" to Done"}
+{"at":"2026-07-05T07:38:23.037Z","actor":"ai","verb":"card-add","card":"c12","num":12,"summary":"added #12 \"Board brief\" to Done"}
+{"at":"2026-07-05T07:38:23.105Z","actor":"ai","verb":"card-add","card":"c13","num":13,"summary":"added #13 \"Label rollups + kb stats\" to Done"}
+{"at":"2026-07-05T07:38:23.152Z","actor":"ai","verb":"card-add","card":"c14","num":14,"summary":"added #14 \"User-testing UX fixes\" to Done"}
+{"at":"2026-07-05T07:38:23.205Z","actor":"ai","verb":"card-add","card":"c15","num":15,"summary":"added #15 \"Now/Next focus view\" to Backlog"}
+{"at":"2026-07-05T07:38:23.273Z","actor":"ai","verb":"card-add","card":"c16","num":16,"summary":"added #16 \"Bulk multi-select operations\" to Backlog"}
+{"at":"2026-07-05T07:38:23.329Z","actor":"ai","verb":"card-add","card":"c17","num":17,"summary":"added #17 \"Density toggle (compact mode)\" to Backlog"}
+{"at":"2026-07-05T07:38:23.373Z","actor":"ai","verb":"card-add","card":"c18","num":18,"summary":"added #18 \"Snooze / defer cards\" to Backlog"}
+{"at":"2026-07-05T07:38:23.426Z","actor":"ai","verb":"card-add","card":"c19","num":19,"summary":"added #19 \"Column automation micro-rules\" to Backlog"}
+{"at":"2026-07-05T07:38:24.041Z","actor":"ai","verb":"card-add","card":"c20","num":20,"summary":"added #20 \"Burn-up sparkline\" to Backlog"}
+{"at":"2026-07-05T07:38:24.723Z","actor":"ai","verb":"card-add","card":"c21","num":21,"summary":"added #21 \"Session undo stack\" to Backlog"}
+{"at":"2026-07-05T07:38:26.173Z","actor":"ai","verb":"card-add","card":"c22","num":22,"summary":"added #22 \"Card cover images\" to Backlog"}
+{"at":"2026-07-05T07:38:27.252Z","actor":"ai","verb":"card-add","card":"c23","num":23,"summary":"added #23 \"Moodboard cross-links\" to Backlog"}
+{"at":"2026-07-05T07:38:28.016Z","actor":"ai","verb":"card-add","card":"c24","num":24,"summary":"added #24 \"Blocker autocomplete by title\" to Backlog"}
+{"at":"2026-07-05T15:12:40.676Z","actor":"user","verb":"card-move","card":"c11","num":11,"summary":"moved #11 → In Progress"}
+{"at":"2026-07-05T15:12:40.841Z","actor":"user","verb":"card-move","card":"c11","num":11,"summary":"moved #11 → Done (completed)"}
+{"at":"2026-07-05T15:21:12.096Z","actor":"ai","verb":"card-add","card":"c25","num":25,"summary":"added #25 \"Composer template picker\" to Backlog"}
+{"at":"2026-07-05T15:32:30.465Z","actor":"ai","verb":"card-edit","card":"c25","num":25,"summary":"edited #25 (description)"}
+{"at":"2026-07-05T15:33:10.582Z","actor":"ai","verb":"card-edit","card":"c25","num":25,"summary":"edited #25 (description)"}
+{"at":"2026-07-05T15:33:10.870Z","actor":"ai","verb":"card-add","card":"c26","num":26,"summary":"added #26 \"Card images (paste + attach + served files)\" to Done"}
+{"at":"2026-07-05T15:39:59.880Z","actor":"ai","verb":"card-add","card":"c27","num":27,"summary":"added #27 \"Workflow shims (client.py / client.ts)\" to Done"}
+{"at":"2026-07-05T22:08:46.696Z","actor":"ai","verb":"card-add","card":"c28","num":28,"summary":"added #28 \"HTML mockups (live sandboxed iframe previews)\" to Done"}
+{"at":"2026-07-05T22:11:21.983Z","actor":"ai","verb":"card-edit","card":"c28","num":28,"summary":"edited #28 (description)"}
+{"at":"2026-10-15T01:03:59.176Z","actor":"ai","verb":"card-add","card":"c29","num":29,"summary":"added #29 \"Route kb and shims through the server only\" to Done"}
