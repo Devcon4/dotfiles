@@ -40,7 +40,7 @@ interface HostAPI {
 export default function apphost(pi: HostAPI): void {
 	const { apps, problems } = discoverApps(process.cwd());
 	try {
-		problems.push(...writeShims(apps.filter(app => app.source === "user")));
+		problems.push(...writeShims(apps));
 	} catch (err) {
 		problems.push(`bin shims: ${(err as Error).message}`);
 	}
@@ -124,7 +124,8 @@ async function appsCommand(apps: App[], problems: string[], args: string, ctx: C
 		case "trust":
 			if (app.source !== "repo") return ctx.ui.notify(`${app.name} is a user app; nothing to trust`, "info");
 			trust(app);
-			return ctx.ui.notify(`${app.name}: digest allowed for ${app.repoRoot}`, "info");
+			for (const problem of writeShims(apps)) ctx.ui.notify(problem, "warning");
+			return ctx.ui.notify(`${app.name}: digest and CLI allowed for ${app.repoRoot}`, "info");
 		default:
 			ctx.ui.notify("usage: /apps [stop|restart|logs|trust <app>] [prune]", "warning");
 	}

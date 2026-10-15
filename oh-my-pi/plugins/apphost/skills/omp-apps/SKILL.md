@@ -20,8 +20,9 @@ collections, sessions), its URLs and its UI.
 | Repo app | `<repo>/.omp/apps/<name>/` | that repo only | none; on in its own repo |
 
 Make a user app when the tool is useful in more than one repo. Make a repo app for a one-off
-tool tied to one codebase. A repo app's digest stays off until the dev runs
-`/apps trust <name>`, because it is code from the repo.
+tool tied to one codebase. A repo app's digest and CLI shims stay off until the dev runs
+`/apps trust <name>`, because it is code from the repo. After that its shims stay on PATH in
+every shell, including omp sessions started in other repos.
 
 ## Add an app
 
@@ -67,7 +68,7 @@ tool tied to one codebase. A repo app's digest stays off until the dev runs
 | `build` | no | Runs before start when `output` is missing or older than any `inputs` path. |
 | `init` | no | Run by `/<command> init` from the session's directory; should write the opt-in config. |
 | `digest` | no | Run at session start from the repo root; its stdout is added to the model's context. |
-| `bin` | no | CLI commands put on PATH as shims (user apps only). |
+| `bin` | no | CLI commands put on PATH as shims (user apps, and repo apps once trusted). |
 
 Every argv is exec'd without a shell. `${APP_DIR}` expands to the app folder; use it in
 `init`, `digest` and `bin`, which run from a repo, not from the app folder.

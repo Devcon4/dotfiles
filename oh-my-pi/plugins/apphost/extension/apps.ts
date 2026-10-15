@@ -209,27 +209,23 @@ interface TrustEntry {
 	root: string;
 }
 
-function trustFile(): string {
-	return join(stateDir(), "trust.json");
-}
-
 function readTrust(): TrustEntry[] {
 	try {
-		const data = JSON.parse(readFileSync(trustFile(), "utf8")) as { entries?: TrustEntry[] };
+		const data = JSON.parse(readFileSync(join(stateDir(), "trust.json"), "utf8")) as { entries?: TrustEntry[] };
 		return Array.isArray(data.entries) ? data.entries : [];
 	} catch {
 		return [];
 	}
 }
 
-/** Repo apps run code from the repo, so their digests stay off until the dev trusts them once. */
+/** Repo apps run code from the repo, so their digests and CLI shims stay off until the dev trusts them once. */
 export function isTrusted(app: App): boolean {
 	return app.source === "user" || readTrust().some(t => t.app === app.name && t.root === app.repoRoot);
 }
 
 export function trust(app: App): void {
 	if (isTrusted(app) || !app.repoRoot) return;
-	writeJson(trustFile(), { entries: [...readTrust(), { app: app.name, root: app.repoRoot }] });
+	writeJson(join(stateDir(), "trust.json"), { entries: [...readTrust(), { app: app.name, root: app.repoRoot }] });
 }
 
 function writeJson(path: string, data: unknown): void {

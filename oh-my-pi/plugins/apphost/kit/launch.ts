@@ -1,4 +1,6 @@
-import { loadApp, optIn, recordOptIn } from "../extension/apps.ts";
+import { realpathSync } from "node:fs";
+import { dirname } from "node:path";
+import { loadApp, optIn, recordOptIn, userAppsDir } from "../extension/apps.ts";
 import { ensureServer } from "../extension/server.ts";
 
 export interface Launched {
@@ -14,7 +16,8 @@ export interface Launched {
  */
 export async function ensureAppServer(cwd: string = process.cwd(), appDir: string | undefined = process.env.APP_DIR): Promise<Launched> {
 	if (!appDir) throw new Error("apphost: APP_DIR is not set; run this through the app's CLI shim");
-	const app = loadApp(appDir, "user");
+	const isUserApp = realpathSync(dirname(appDir)) === realpathSync(userAppsDir());
+	const app = isUserApp ? loadApp(appDir, "user") : loadApp(appDir, "repo", dirname(dirname(dirname(appDir))));
 	const entry = optIn(app, cwd);
 	if (!entry) throw new Error(`${app.name} is off in this repo; create ${app.config} at the repo root or run /${app.command} init`);
 	recordOptIn(app, entry);

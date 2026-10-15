@@ -134,7 +134,7 @@ moodboards. The `omp-apphost` plugin runs them for every repo that opts in:
   current repo's page; `/apps` lists apps, servers and opted-in repos.
 - Apps can add a session-start digest for the model and CLI commands, which
   the host writes as shims to `~/.local/share/omp-apps/bin` (on PATH via
-  `zsh/zshrc`).
+  `zsh/zshrc`). A repo app's digest and CLI stay off until `/apps trust <app>`.
 - The plugin is linked, not copied, and `~/.omp/agent/apps` is a symlink, so
   edits in this repo are live and `sync.sh` has nothing to capture. The app
   skills are found through `skills.customDirectories` in `config.yml`.

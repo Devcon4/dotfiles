@@ -13,7 +13,7 @@ import {
 } from "node:fs";
 import { delimiter, join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
-import { appVars, binDir, expand, runDir, type App } from "./apps.ts";
+import { appVars, binDir, expand, isTrusted, runDir, type App } from "./apps.ts";
 
 export type Health = { state: "up" } | { state: "down" } | { state: "taken"; by: string };
 
@@ -124,27 +124,39 @@ export function logTail(app: App, lines: number): string {
 }
 
 /**
- * Writes a PATH shim per `bin` entry of the given apps and removes shims of apps that are gone.
- * Returns a problem line for each name held by a file the host did not write.
+ * Writes a PATH shim per `bin` entry of the trusted apps given, and removes shims whose app is gone or no
+ * longer declares them. Shims of apps this session did not discover (repo apps of other repos) stay.
+ * Returns a problem line for each name held by a file the host did not write or by another app.
  */
 export function writeShims(apps: App[]): string[] {
 	const dir = binDir();
 	mkdirSync(dir, { recursive: true });
-	const wanted = new Map<string, string>();
-	for (const app of apps) {
-		for (const [name, argv] of Object.entries(app.bin)) wanted.set(name, shim(app, argv));
+	const wanted = new Map<string, { app: App; content: string }>();
+	for (const app of apps.filter(isTrusted)) {
+		for (const [name, argv] of Object.entries(app.bin)) wanted.set(name, { app, content: shim(app, argv) });
 	}
+	const declared = new Map(apps.map(app => [app.dir, new Set(Object.keys(app.bin))]));
+	const isLiveElsewhere = (owner: string) => !declared.has(owner) && existsSync(join(owner, "app.json"));
 	const problems: string[] = [];
 	for (const file of readdirSync(dir)) {
-		const path = join(dir, file);
-		if (!wanted.has(file) && readFileSync(path, "utf8").includes(SHIM_MARK)) unlinkSync(path);
+		if (wanted.has(file)) continue;
+		const owner = shimOwner(readFileSync(join(dir, file), "utf8"));
+		if (owner === undefined || isLiveElsewhere(owner)) continue;
+		// Trust has no revoke, so an app that reads as untrusted keeps the shims written while it was trusted.
+		if (declared.get(owner)?.has(file)) continue;
+		unlinkSync(join(dir, file));
 	}
-	for (const [name, content] of wanted) {
+	for (const [name, { app, content }] of wanted) {
 		const path = join(dir, name);
 		const current = existsSync(path) ? readFileSync(path, "utf8") : undefined;
 		if (current === content) continue;
-		if (current !== undefined && !current.includes(SHIM_MARK)) {
+		const owner = current === undefined ? app.dir : shimOwner(current);
+		if (owner === undefined) {
 			problems.push(`bin "${name}": ${path} exists and was not written by omp apps; left alone`);
+			continue;
+		}
+		if (owner !== app.dir && isLiveElsewhere(owner)) {
+			problems.push(`bin "${name}": already provided by the app in ${owner}; left alone`);
 			continue;
 		}
 		writeFileSync(path, content, { mode: 0o755 });
@@ -155,6 +167,12 @@ export function writeShims(apps: App[]): string[] {
 }
 
 const SHIM_MARK = "# omp-apps shim";
+
+function shimOwner(content: string): string | undefined {
+	if (!content.includes(SHIM_MARK)) return undefined;
+	const quoted = /^export APP_DIR='(.*)'$/m.exec(content)?.[1];
+	return quoted?.replaceAll(`'\\''`, "'");
+}
 
 function shim(app: App, argv: string[]): string {
 	const quote = (value: string) => `'${value.replaceAll("'", `'\\''`)}'`;
