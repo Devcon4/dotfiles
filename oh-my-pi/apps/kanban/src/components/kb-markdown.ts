@@ -4,8 +4,12 @@
 
 import { LitElement, css, html } from "lit";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
+import { isPreviewable, type LinkPreview } from "../../preview.ts";
+import { api } from "../api.ts";
 import { mdToHtml } from "../markdown.ts";
 import { base } from "../shared.ts";
+
+const previews = new Map<string, Promise<LinkPreview | null>>();
 
 export class KbMarkdown extends LitElement {
   static properties = {
@@ -163,6 +167,38 @@ export class KbMarkdown extends LitElement {
       .mockup-frame.tall {
         height: 760px;
       }
+      .link-preview {
+        display: inline-block;
+        max-width: 100%;
+        margin: 4px 0;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        background: var(--surface);
+        color: var(--fg-muted);
+        vertical-align: top;
+      }
+      .link-preview:hover {
+        border-color: var(--fg-subtle);
+        color: var(--fg);
+        text-decoration: none;
+      }
+      .link-preview img {
+        display: block;
+        max-width: 320px;
+        max-height: 240px;
+        border-radius: 0;
+      }
+      .link-preview-title {
+        display: block;
+        width: 0;
+        min-width: 100%;
+        padding: 5px 9px;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
       .card-ref {
         font: inherit;
         font-family: var(--mono);
@@ -238,6 +274,7 @@ export class KbMarkdown extends LitElement {
       a.rel = "noopener";
     }
     this.embedMockups();
+    this.embedPreviews();
     this.linkifyCardRefs();
   }
 
@@ -280,6 +317,24 @@ export class KbMarkdown extends LitElement {
     }
   }
 
+  /** Upgrade a link that stands alone on its line, to a page on this machine
+   * that declares an `og:image`, into an image preview that opens the page. */
+  private embedPreviews(): void {
+    for (const link of this.renderRoot.querySelectorAll<HTMLAnchorElement>(".md a[href]")) {
+      const href = link.href;
+      if (link.querySelector("img") || !standsAlone(link)) continue;
+      if (!isPreviewable(href) || new URL(href).origin === location.origin) continue;
+      let preview = previews.get(href);
+      if (!preview) {
+        preview = api.preview(href).then((r) => r.preview, () => null);
+        previews.set(href, preview);
+      }
+      void preview.then((p) => {
+        if (p && link.isConnected) link.replaceWith(previewTile(link, p));
+      });
+    }
+  }
+
   /** Turn `#12` in plain text into clickable card refs (skips code/links). */
   private linkifyCardRefs(): void {
     const root = this.renderRoot.querySelector(".md");
@@ -317,6 +372,38 @@ export class KbMarkdown extends LitElement {
       text.replaceWith(frag);
     }
   }
+}
+
+/** Is the link the only content on its line of a paragraph or list item? */
+function standsAlone(link: HTMLAnchorElement): boolean {
+  if (link.parentElement?.tagName !== "P" && link.parentElement?.tagName !== "LI") return false;
+  for (const step of ["previousSibling", "nextSibling"] as const) {
+    for (let node = link[step]; node && node.nodeName !== "BR"; node = node[step]) {
+      if (node.nodeType !== Node.TEXT_NODE || node.textContent?.trim()) return false;
+    }
+  }
+  return true;
+}
+
+function previewTile(link: HTMLAnchorElement, preview: LinkPreview): HTMLAnchorElement {
+  const text = link.textContent?.trim();
+  const caption = text && text !== link.href ? text : (preview.title ?? link.href);
+  const tile = document.createElement("a");
+  tile.className = "link-preview";
+  tile.href = link.href;
+  tile.target = "_blank";
+  tile.rel = "noopener";
+  tile.title = link.href;
+  const img = document.createElement("img");
+  img.src = preview.image;
+  img.alt = caption;
+  img.loading = "lazy";
+  img.onerror = () => tile.replaceWith(link);
+  const label = document.createElement("span");
+  label.className = "link-preview-title";
+  label.textContent = caption;
+  tile.append(img, label);
+  return tile;
 }
 
 customElements.define("kb-markdown", KbMarkdown);

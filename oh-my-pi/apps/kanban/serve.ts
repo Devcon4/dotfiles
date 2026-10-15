@@ -24,6 +24,7 @@ import {
 import type { Board, BoardPatch, CardPatch, Column, Label, Size } from "./store.ts";
 import { readActivity } from "./activity.ts";
 import type { Actor } from "./activity.ts";
+import { isPreviewable, linkPreview } from "./preview.ts";
 
 const kitDir = process.env.APP_KIT ?? resolve(import.meta.dirname, "../../plugins/apphost/kit");
 // The host passes the kit's location in APP_KIT; an app can live in any repo, so no static path reaches it.
@@ -497,6 +498,12 @@ const server = createServer(async (req, res) => {
         })),
       );
       return json(res, { projects: list });
+    }
+
+    if (url.pathname === "/api/preview" && method === "GET") {
+      const target = url.searchParams.get("url") ?? "";
+      if (!isPreviewable(target)) return json(res, { error: "previews are limited to http(s) links on localhost" }, 400);
+      return json(res, { preview: await linkPreview(target) });
     }
 
     if (url.pathname.startsWith("/assets/")) {

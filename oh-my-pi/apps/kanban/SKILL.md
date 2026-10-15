@@ -150,6 +150,12 @@ Invariants: every non-archived card appears in exactly one `order` list; every
    external vendor, etc.).
 6. **Archiving:** The UI and CLI use archive instead of deleting files. To purge
    a card completely, edit the JSON file directly.
+7. **Proof on done:** Before moving a card to a done column, add proof to its
+   body that the work runs, usually a screenshot of the result. When the
+   project's README names a screenshot app, store the capture there and link to
+   its page for that capture; the link renders as a preview (see Link previews).
+   Otherwise `kb attach` the image. Work with nothing to screenshot, such as a
+   refactor or a CLI change, records the command and output that proved it.
 
 ## Card templates
 
@@ -189,6 +195,13 @@ await kb.move("my-board", 12, "done");
 - **HTML mockups:** Stored under `<dataDir>/mockups/<board>/<name>.html`.
   Linked with `kb mockup <board> <card> <file.html>`. Served under
   `/<project>/mockups/<board>/<file>.html` and rendered in sandboxed iframes.
+- **Link previews:** A link alone on its line of a paragraph or list item that
+  points at a page on `localhost`, `127.0.0.1` or `[::1]` renders as an image
+  preview when the page's HTML declares `<meta property="og:image">`. Clicking
+  the preview opens the page. The server fetches the page through
+  `GET /api/preview?url=<link>` and caches the result for a minute; links inside
+  a sentence stay text. An app gets previews by serving `og:image` and
+  `og:title` on its pages. Kanban holds no code for any particular app.
 
 ## Playbooks
 

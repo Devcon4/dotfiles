@@ -1,4 +1,5 @@
 import type { Board, BoardPatch, Card, CardPatch, Column } from "../store.ts";
+import type { LinkPreview } from "../preview.ts";
 
 export interface ColumnSummary {
   id: string;
@@ -39,7 +40,7 @@ export function getApiProject(): string {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const normalized = path.startsWith("/") ? path : `/${path}`;
-  const fullPath = normalized.startsWith("/api/projects")
+  const fullPath = /^\/api\/(?:projects|preview)(?:[/?]|$)/.test(normalized)
     ? normalized
     : activeProject
       ? `/${activeProject}${normalized}`
@@ -115,6 +116,9 @@ export const api = {
 
   search: (q: string) =>
     request<{ results: SearchResult[] }>(`/api/search?q=${encodeURIComponent(q)}`),
+
+  preview: (url: string) =>
+    request<{ preview: LinkPreview | null }>(`/api/preview?url=${encodeURIComponent(url)}`),
 };
 
 export interface ActivityEntry {
