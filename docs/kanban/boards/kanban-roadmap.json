@@ -4,7 +4,7 @@
   "accent": "#986ee2",
   "archived": false,
   "brief": "",
-  "nextCardId": 29,
+  "nextCardId": 30,
   "labels": [
     {
       "id": "shipped",
@@ -88,7 +88,8 @@
       "c11",
       "c26",
       "c27",
-      "c28"
+      "c28",
+      "c29"
     ]
   },
   "cards": {
@@ -637,8 +638,28 @@
       "createdAt": "2026-07-05T22:08:46.680Z",
       "updatedAt": "2026-07-05T22:11:21.969Z",
       "completedAt": "2026-07-05T22:08:46.681Z"
+    },
+    "c29": {
+      "id": "c29",
+      "num": 29,
+      "title": "Route kb and shims through the server only",
+      "body": "Every `kb` command and both shims (`client.ts`, `client.py`) now go through the server's HTTP API. `kb` starts the server and records the repo's opt-in when the server is down, so no process reads or writes board JSON directly.\n\n- New server endpoints that run inside the per-board lock: `POST card/<ref>/blockers` (link/unlink), `PUT label/<id>`, `POST card/<ref>/append`, `POST card/<ref>/attach` (image + body in one step), `POST card/<ref>/mockup`, `GET template/<name>`, `GET digest?since=`.\n- Card refs accept `c12`, `12` or `#12` server-side, so writes are one request.\n- `POST /api/images` takes JSON (base64). The old raw-image upload was rejected by the host's JSON-only body rule (415), so UI paste failed; paste now works.\n- New `kb append` for proof and notes.\n- `kb digest` only advances the \"since last session\" marker with `--session`, which the host passes. Agents running `kb digest` no longer hide user actions from the next session.\n\n**Proof** (throwaway repo in /tmp, 20 concurrent `kb add` per trial):\n\n| Trial | Old kb (direct file writes) | New kb (server) |\n| --- | --- | --- |\n| 1 | 12 of 20 cards | 20 of 20 |\n| 2 | 12 of 20 | 20 of 20 |\n| 3 | 10 of 20 | 20 of 20 |\n\nConcurrent compound edits on one card with the new kb: 10/10 blockers, 10/10 labels, 8/8 attachments, 0 failures. Every CLI command, both shims and a browser paste into the card editor were exercised; `tsc --noEmit` is clean.\n",
+      "labels": [
+        "shipped",
+        "infra"
+      ],
+      "size": null,
+      "assignee": "ai",
+      "color": null,
+      "blocked": null,
+      "blockedBy": [],
+      "completed": true,
+      "archived": false,
+      "createdAt": "2026-10-15T01:03:59.176Z",
+      "updatedAt": "2026-10-15T01:03:59.176Z",
+      "completedAt": "2026-10-15T01:03:59.176Z"
     }
   },
   "createdAt": "2026-07-05T07:36:21.654Z",
-  "updatedAt": "2026-07-05T22:11:21.969Z"
+  "updatedAt": "2026-10-15T01:03:59.176Z"
 }

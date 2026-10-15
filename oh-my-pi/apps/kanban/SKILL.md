@@ -37,6 +37,13 @@ This creates `.omp/apps/kanban.json` at the repository root:
 The app host starts the server when needed, serves all opted-in repositories
 from one process, and provides a session-start digest to the model.
 
+Every `kb` command and both workflow shims go through the server's HTTP API;
+nothing reads or writes board files directly. `kb` starts the server and records
+the repo's opt-in when the server is down. The server applies each write under a
+per-board lock, including compound edits (blockers, labels, attachments,
+mockups), so parallel agents and subagents can share one board without losing
+updates.
+
 ## Running the server and UI
 
 ```bash
@@ -48,9 +55,9 @@ socket can wedge after a restart, so binding all interfaces ensures
 reliable connectivity from Windows browsers.
 
 Web interface URLs:
-- `http://localhost:5174/` — Lists all opted-in projects and their board counts.
-- `http://localhost:5174/<project>/` — Project board home and search.
-- `http://localhost:5174/<project>/<board>/` — Individual board view.
+- `http://localhost:5174/` lists all opted-in projects and their board counts.
+- `http://localhost:5174/<project>/` is the project's board home and search.
+- `http://localhost:5174/<project>/<board>/` is one board.
 
 ## CLI (`kb`)
 
@@ -64,6 +71,7 @@ kb card <board> <card> [--json]               # show single card (card = 12 | #1
 kb add <board> "Title" [--column backlog] [--index n] [--body "md" | --body-file f] [--template t]
      [--labels a,b] [--size XS|S|M|L|XL] [--assignee ai|user] [--color "#hex"] [--blocked "reason"]
 kb edit <board> <card> [same flags; use `none` to clear fields]
+kb append <board> <card> [--body "md" | --body-file f] # append to the card body (proof, notes)
 kb move <board> <card> <column> [--index n]
 kb done <board> <card...>   /  undone <board> <card...>
 kb archive <board> <card...>  /  restore <board> <card> [--column id]
@@ -81,15 +89,20 @@ kb attach <board> <card> <image> [--alt text] # attach image file into card body
 kb mockup <board> <card> <file.html> [--title T] # link sandboxed iframe mockup
 ```
 
+A flag value that starts with `-` needs the `=` form: `--body="- [ ] task"`.
+
 Every mutating command accepts `--as <user|ai>` (default **ai**). Pass
 `--as user` only when relaying an explicit user instruction to preserve honest
 attribution in the activity log.
 
 ## Session-start digest
 
-At session start, the app host injects the output of `kb digest`. The digest
-summarizes per-board counts by column, blocked cards, cards awaiting review in a
-Review column, and any actions taken by `user` since the last session.
+At session start, the app host injects the output of `kb digest --session`. The
+digest summarizes per-board counts by column, blocked cards, cards awaiting
+review in a Review column, and any actions taken by `user` since the last
+session. Only `--session` advances the "last session" marker, so an agent running
+plain `kb digest` sees the same summary without hiding your changes from the
+next session.
 
 ## Data schema (`boards/<slug>.json`)
 
@@ -148,8 +161,9 @@ Invariants: every non-archived card appears in exactly one `order` list; every
 5. **Relations:** Dependencies use `blockedBy` (`kb link`), not prose. The
    `blocked` text field is reserved for external blockers (waiting on human decision,
    external vendor, etc.).
-6. **Archiving:** The UI and CLI use archive instead of deleting files. To purge
-   a card completely, edit the JSON file directly.
+6. **Archiving:** The UI and CLI use archive instead of deleting files. Purging a
+   card completely is manual maintenance for the dev: stop the server (`/board stop`),
+   then edit the JSON file. Agents archive.
 7. **Proof on done:** Before moving a card to a done column, add proof to its
    body that the work runs, usually a screenshot of the result. When the
    project's README names a screenshot app, store the capture there and link to
@@ -160,10 +174,10 @@ Invariants: every non-archived card appears in exactly one `order` list; every
 ## Card templates
 
 Shared body templates live in the app's `templates/` folder:
-- `bug.md` — summary, repro steps, expected vs actual, root cause.
-- `feature.md` — user intent, UX details, acceptance criteria.
-- `engineering.md` — technical architecture, trade-offs, rollout plan.
-- `techdebt.md` — carry cost, remediation, migration path.
+- `bug.md`: summary, repro steps, expected vs actual, root cause.
+- `feature.md`: user intent, UX details, acceptance criteria.
+- `engineering.md`: technical architecture, trade-offs, rollout plan.
+- `techdebt.md`: carry cost, remediation, migration path.
 
 A repository's `<dataDir>/templates/<name>.md` overrides a shared template of
 the same name. Use `kb add <board> "Title" --template <name>` or `--body-file` to
@@ -171,30 +185,35 @@ seed a card body.
 
 ## Workflow shims (eval orchestration)
 
-For scripted workflows or parallel subagents, use the client shims so writes
-serialize through the HTTP API lock:
+Scripted workflows can use the client shims instead of shelling out to `kb`.
+They call the same API, resolve the project from the nearest
+`.omp/apps/kanban.json`, and accept card refs as `c12`, `12` or `#12`:
 
 ```python
 import client as kb
 kb.ensure_up()
 card = kb.add("my-board", "Title", body="- [ ] task", column="doing")
-kb.link("my-board", card["id"], 12)
+kb.link("my-board", card["num"], 12)
+kb.attach("my-board", card["num"], "shot.png", "proof")
+kb.mockup("my-board", card["num"], "layout", "<html>…</html>", "Layout")
 ```
 
 ```javascript
 import * as kb from "./client.ts";
 await kb.ensureUp();
 await kb.move("my-board", 12, "done");
+await kb.unlink("my-board", 12, "all");
 ```
 
 ## Images and mockups
 
-- **Images:** Stored under `<dataDir>/images/<board>/`. Attached with
-  `kb attach <board> <card> <path> [--alt text]`. Served under
-  `/<project>/images/<board>/<file>`.
+- **Images:** Stored under `<dataDir>/images/<board>/`. `kb attach <board>
+  <card> <path> [--alt text]` uploads the file and appends it to the card in one
+  step. Served under `/<project>/images/<board>/<file>`.
 - **HTML mockups:** Stored under `<dataDir>/mockups/<board>/<name>.html`.
-  Linked with `kb mockup <board> <card> <file.html>`. Served under
-  `/<project>/mockups/<board>/<file>.html` and rendered in sandboxed iframes.
+  `kb mockup <board> <card> <file.html>` uploads the file and appends a link.
+  Served under `/<project>/mockups/<board>/<file>.html` and rendered in
+  sandboxed iframes.
 - **Link previews:** A link alone on its line of a paragraph or list item that
   points at a page on `localhost`, `127.0.0.1` or `[::1]` renders as an image
   preview when the page's HTML declares `<meta property="og:image">`. Clicking

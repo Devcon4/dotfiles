@@ -38,3 +38,4 @@
 {"at":"2026-07-05T15:39:59.880Z","actor":"ai","verb":"card-add","card":"c27","num":27,"summary":"added #27 \"Workflow shims (client.py / client.ts)\" to Done"}
 {"at":"2026-07-05T22:08:46.696Z","actor":"ai","verb":"card-add","card":"c28","num":28,"summary":"added #28 \"HTML mockups (live sandboxed iframe previews)\" to Done"}
 {"at":"2026-07-05T22:11:21.983Z","actor":"ai","verb":"card-edit","card":"c28","num":28,"summary":"edited #28 (description)"}
+{"at":"2026-10-15T01:03:59.176Z","actor":"ai","verb":"card-add","card":"c29","num":29,"summary":"added #29 \"Route kb and shims through the server only\" to Done"}

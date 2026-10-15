@@ -8,9 +8,12 @@ import {
   safeSlug,
   SIZES,
   StoreError,
+  appendCardBody,
   archiveCard,
   createBoard,
   createCard,
+  editBlockers,
+  getCard,
   isBlocked,
   listBoards,
   moveCard,
@@ -20,6 +23,7 @@ import {
   readBoard,
   taskStats,
   toggleCardTask,
+  upsertLabel,
 } from "./store.ts";
 import type { Board, BoardPatch, CardPatch, Column, Label, Size } from "./store.ts";
 import { readActivity } from "./activity.ts";
@@ -246,6 +250,88 @@ async function countBoards(dataDir: string): Promise<number> {
   }
 }
 
+const APP_TEMPLATES = resolve(import.meta.dirname, "templates");
+
+function fileHint(name: string, max: number, fallback: string): string {
+  return (
+    name
+      .toLowerCase()
+      .replace(/\.[a-z0-9]+$/, "")
+      .replace(/[^a-z0-9-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, max) || fallback
+  );
+}
+
+interface ImageUpload {
+  name?: string;
+  type?: string;
+  data?: string;
+}
+
+async function saveImage(proj: Project, slug: string, upload: ImageUpload): Promise<string> {
+  const ext = IMAGE_TYPES[String(upload.type ?? "").toLowerCase()];
+  if (!ext) throw new StoreError(`unsupported image type ${String(upload.type)}`, 415);
+  const bytes = Buffer.from(String(upload.data ?? ""), "base64");
+  if (bytes.length === 0) throw new StoreError("empty image", 400);
+  if (bytes.length > MAX_IMAGE_BYTES) throw new StoreError("image too large (10MB cap)", 413);
+  const file = `${fileHint(String(upload.name ?? ""), 40, "shot")}-${Date.now().toString(36)}${ext}`;
+  const dir = join(proj.dataDir, "images", slug);
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, file), bytes);
+  return `/${proj.id}/images/${slug}/${file}`;
+}
+
+async function saveMockup(proj: Project, slug: string, name: string, html: string): Promise<string> {
+  if (!html.trim()) throw new StoreError("empty mockup", 400);
+  const file = `${fileHint(name, 48, "mockup")}.html`;
+  const dir = join(proj.dataDir, "mockups", slug);
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, file), html);
+  return `/${proj.id}/mockups/${slug}/${file}`;
+}
+
+async function readTemplate(proj: Project, name: string): Promise<string> {
+  const base = name.replace(/\.md$/, "");
+  if (!/^[a-z0-9-]+$/.test(base)) throw new StoreError(`invalid template name ${name}`, 400);
+  for (const dir of [join(proj.dataDir, "templates"), APP_TEMPLATES]) {
+    const path = join(dir, `${base}.md`);
+    if (existsSync(path)) return await readFile(path, "utf8");
+  }
+  throw new StoreError(`template "${base}" not found in ${join(proj.dataDir, "templates")} or ${APP_TEMPLATES}`, 404);
+}
+
+async function digest(proj: Project, since: string) {
+  const listing = await listBoards(proj.dataDir);
+  const boards = listing.boards
+    .filter((b) => !b.archived)
+    .map((b) => {
+      const reviewCols = b.columns.filter((c) => c.id.toLowerCase().includes("review") || c.name.toLowerCase().includes("review"));
+      const review = reviewCols
+        .flatMap((col) => b.order[col.id] ?? [])
+        .map((id) => b.cards[id])
+        .filter((c) => c && !c.completed && !c.archived)
+        .map((c) => ({ num: c.num, title: c.title }));
+      const blocked = Object.values(b.cards).filter((c) => !c.completed && !c.archived && isBlocked(b, c));
+      return {
+        name: b.name,
+        slug: b.slug,
+        columns: b.columns.map((col) => ({ name: col.name, count: (b.order[col.id] ?? []).length })),
+        review,
+        waiting: blocked.filter((c) => !c.blocked).length,
+        external: blocked.filter((c) => c.blocked).map((c) => ({ num: c.num, blocked: c.blocked as string })),
+      };
+    });
+  const userActions: Array<{ slug: string; at: string; summary: string }> = [];
+  for (const b of listing.boards) {
+    for (const a of await readActivity(proj.dataDir, b.slug, 30)) {
+      if (a.actor === "user" && (!since || a.at > since)) userActions.push({ slug: b.slug, at: a.at, summary: a.summary });
+    }
+  }
+  userActions.sort((a, b) => a.at.localeCompare(b.at));
+  return { boards, userActions: userActions.slice(-5), unreadable: listing.unreadable };
+}
+
 async function handleProjectApi(
   proj: Project,
   req: IncomingMessage,
@@ -351,6 +437,7 @@ async function handleProjectApi(
         slug: body.slug ? String(body.slug) : undefined,
         accent: body.accent ? String(body.accent) : undefined,
         template: body.template ? String(body.template) : undefined,
+        review: body.review === true,
       },
       actor,
     );
@@ -432,6 +519,66 @@ async function handleProjectApi(
     return json(res, { card }, 201);
   }
 
+  if (parts[0] === "board" && parts[2] === "card" && parts[4] === "blockers" && method === "POST") {
+    const slug = safeSlug(parts[1]);
+    const body = (await readJson(req)) as { add?: string[]; remove?: string[] | "all" };
+    const { card } = await editBlockers(proj.dataDir, slug, parts[3], body, actorOf(req));
+    broadcast(proj.id, slug);
+    return json(res, { card });
+  }
+
+  if (parts[0] === "board" && parts[2] === "card" && parts[4] === "append" && method === "POST") {
+    const slug = safeSlug(parts[1]);
+    const body = (await readJson(req)) as { text?: string };
+    const text = String(body.text ?? "").trim();
+    if (!text) throw new StoreError("text required");
+    const { card } = await appendCardBody(proj.dataDir, slug, parts[3], text, actorOf(req));
+    broadcast(proj.id, slug);
+    return json(res, { card });
+  }
+
+  if (parts[0] === "board" && parts[2] === "card" && parts[4] === "attach" && method === "POST") {
+    const slug = safeSlug(parts[1]);
+    const body = (await readJson(req)) as ImageUpload & { alt?: string };
+    getCard(await readBoard(proj.dataDir, slug), parts[3]);
+    const url = await saveImage(proj, slug, body);
+    const { card } = await appendCardBody(proj.dataDir, slug, parts[3], `![${body.alt ?? ""}](${url})`, actorOf(req));
+    broadcast(proj.id, slug);
+    return json(res, { card, url }, 201);
+  }
+
+  if (parts[0] === "board" && parts[2] === "card" && parts[4] === "mockup" && method === "POST") {
+    const slug = safeSlug(parts[1]);
+    const body = (await readJson(req)) as { name?: string; html?: string; title?: string };
+    getCard(await readBoard(proj.dataDir, slug), parts[3]);
+    const url = await saveMockup(proj, slug, String(body.name ?? ""), String(body.html ?? ""));
+    const title = body.title ?? url.slice(url.lastIndexOf("/") + 1, -".html".length);
+    const { card } = await appendCardBody(proj.dataDir, slug, parts[3], `[${title}](${url})`, actorOf(req));
+    broadcast(proj.id, slug);
+    return json(res, { card, url }, 201);
+  }
+
+  if (parts[0] === "board" && parts[2] === "label" && parts.length === 4 && method === "PUT") {
+    const slug = safeSlug(parts[1]);
+    const body = (await readJson(req)) as { name?: string; color?: string };
+    const board = await upsertLabel(
+      proj.dataDir,
+      slug,
+      { id: decodeURIComponent(parts[3]), name: String(body.name ?? ""), color: String(body.color ?? "") },
+      actorOf(req),
+    );
+    broadcast(proj.id, slug);
+    return json(res, { board });
+  }
+
+  if (parts[0] === "template" && parts.length === 2 && method === "GET") {
+    return json(res, { body: await readTemplate(proj, decodeURIComponent(parts[1])) });
+  }
+
+  if (parts[0] === "digest" && method === "GET") {
+    return json(res, await digest(proj, url.searchParams.get("since") ?? ""));
+  }
+
   if (parts[0] === "board" && parts[2] === "activity" && method === "GET") {
     const slug = safeSlug(parts[1]);
     const limit = Math.max(1, Math.min(100, Number(url.searchParams.get("limit") ?? 30)));
@@ -440,30 +587,9 @@ async function handleProjectApi(
   }
 
   if (parts[0] === "images" && method === "POST") {
-    const slug = safeSlug(url.searchParams.get("board") ?? "");
-    const contentType = (req.headers["content-type"] ?? "").split(";")[0].trim().toLowerCase();
-    const ext = IMAGE_TYPES[contentType];
-    if (!ext) throw new StoreError(`unsupported image type ${contentType}`, 415);
-    const chunks: Buffer[] = [];
-    let size = 0;
-    for await (const chunk of req) {
-      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk));
-      size += buf.length;
-      if (size > MAX_IMAGE_BYTES) throw new StoreError("image too large (10MB cap)", 413);
-      chunks.push(buf);
-    }
-    if (size === 0) throw new StoreError("empty image body", 400);
-    const hint = (url.searchParams.get("name") ?? "shot")
-      .toLowerCase()
-      .replace(/\.[a-z0-9]+$/, "")
-      .replace(/[^a-z0-9-]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 40) || "shot";
-    const file = `${hint}-${Date.now().toString(36)}${ext}`;
-    const imagesDir = join(proj.dataDir, "images", slug);
-    await mkdir(imagesDir, { recursive: true });
-    await writeFile(join(imagesDir, file), Buffer.concat(chunks));
-    return json(res, { ok: true, url: `/${proj.id}/images/${slug}/${file}` }, 201);
+    const body = (await readJson(req)) as ImageUpload & { board?: string };
+    const url = await saveImage(proj, safeSlug(String(body.board ?? "")), body);
+    return json(res, { ok: true, url }, 201);
   }
 
   json(res, { error: "not found" }, 404);

@@ -331,8 +331,29 @@ export function patchBoard(dataRoot: string, slug: string, patch: BoardPatch, ac
   });
 }
 
-function getCard(board: Board, cardId: string): Card {
-  const card = board.cards[cardId] ?? Object.values(board.cards).find((c) => `${c.num}` === cardId);
+export function upsertLabel(dataRoot: string, slug: string, label: Label, actor: Actor = "ai"): Promise<Board> {
+  return withBoardLock(dataRoot, slug, async () => {
+    const board = await readBoard(dataRoot, slug);
+    const id = String(label.id ?? "").trim();
+    if (!id) throw new StoreError("label id required");
+    const next: Label = { id, name: String(label.name ?? id), color: checkColor(label.color, `label ${id}.color`) };
+    const at = board.labels.findIndex((l) => l.id === id);
+    if (at >= 0) board.labels[at] = next;
+    else board.labels.push(next);
+    const written = await writeBoard(dataRoot, board);
+    await appendActivity(dataRoot, slug, {
+      at: new Date().toISOString(),
+      actor,
+      verb: "board-edit",
+      summary: `set label ${id}`,
+    });
+    return written;
+  });
+}
+
+export function getCard(board: Board, cardId: string): Card {
+  const ref = cardId.replace(/^#/, "");
+  const card = board.cards[ref] ?? Object.values(board.cards).find((c) => `${c.num}` === ref);
   if (!card) throw new StoreError(`card ${cardId} not found in ${board.slug}`, 404);
   return card;
 }
@@ -481,6 +502,61 @@ export function patchCard(
       card: card.id,
       num: card.num,
       summary: describeCardPatch(patch, card),
+    });
+    return { board, card };
+  });
+}
+
+export function editBlockers(
+  dataRoot: string,
+  slug: string,
+  cardId: string,
+  change: { add?: string[]; remove?: string[] | "all" },
+  actor: Actor = "ai",
+): Promise<{ board: Board; card: Card }> {
+  return withBoardLock(dataRoot, slug, async () => {
+    const board = await readBoard(dataRoot, slug);
+    const card = getCard(board, cardId);
+    const remove =
+      change.remove === "all"
+        ? new Set(card.blockedBy)
+        : new Set((change.remove ?? []).map((ref) => getCard(board, ref).id));
+    const add = (change.add ?? []).map((ref) => getCard(board, ref).id);
+    const patch: CardPatch = { blockedBy: [...card.blockedBy.filter((id) => !remove.has(id)), ...add] };
+    applyCardPatch(board, card, patch);
+    await writeBoard(dataRoot, board);
+    await appendActivity(dataRoot, slug, {
+      at: new Date().toISOString(),
+      actor,
+      verb: "card-edit",
+      card: card.id,
+      num: card.num,
+      summary: describeCardPatch({ blockedBy: card.blockedBy }, card),
+    });
+    return { board, card };
+  });
+}
+
+export function appendCardBody(
+  dataRoot: string,
+  slug: string,
+  cardId: string,
+  text: string,
+  actor: Actor = "ai",
+): Promise<{ board: Board; card: Card }> {
+  return withBoardLock(dataRoot, slug, async () => {
+    const board = await readBoard(dataRoot, slug);
+    const card = getCard(board, cardId);
+    const body = card.body.trim() ? `${card.body.replace(/\s+$/, "")}\n\n${text}\n` : `${text}\n`;
+    applyCardPatch(board, card, { body });
+    await writeBoard(dataRoot, board);
+    await appendActivity(dataRoot, slug, {
+      at: new Date().toISOString(),
+      actor,
+      verb: "card-edit",
+      card: card.id,
+      num: card.num,
+      summary: describeCardPatch({ body }, card),
     });
     return { board, card };
   });

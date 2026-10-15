@@ -5,6 +5,7 @@
 
 import { LitElement, css, html, nothing } from "lit";
 import type { Card } from "../../store.ts";
+import { api } from "../api.ts";
 import { SIZES, base, relTime, tint } from "../shared.ts";
 import { state, subscribe } from "../state.ts";
 import "./kb-markdown.ts";
@@ -384,17 +385,8 @@ export class KbPanel extends LitElement {
     const area = e.currentTarget;
     if (!slug || !(area instanceof HTMLTextAreaElement)) return;
     try {
-      const res = await fetch(`/api/images?board=${slug}&name=${encodeURIComponent(file.name || "paste")}`, {
-        method: "POST",
-        headers: { "content-type": file.type },
-        body: file,
-      });
-      const data: unknown = await res.json();
-      if (!res.ok || !data || typeof data !== "object" || !("url" in data) || typeof data.url !== "string") {
-        state.toast("Image upload failed", { danger: true });
-        return;
-      }
-      const md = `![](${data.url})`;
+      const { url } = await api.uploadImage(slug, file);
+      const md = `![](${url})`;
       const at = area.selectionStart ?? this.draft.length;
       this.draft = this.draft.slice(0, at) + md + this.draft.slice(area.selectionEnd ?? at);
       this.requestUpdate();

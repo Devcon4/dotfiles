@@ -12,7 +12,7 @@
     "inputs": ["src", "index.html", "vite.config.ts", "package.json"]
   },
   "init": ["node", "${APP_DIR}/kb.ts", "init"],
-  "digest": ["node", "${APP_DIR}/kb.ts", "digest"],
+  "digest": ["node", "${APP_DIR}/kb.ts", "digest", "--session"],
   "bin": {
     "kb": ["node", "${APP_DIR}/kb.ts"]
   }

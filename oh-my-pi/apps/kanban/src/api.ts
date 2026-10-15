@@ -117,6 +117,25 @@ export const api = {
   search: (q: string) =>
     request<{ results: SearchResult[] }>(`/api/search?q=${encodeURIComponent(q)}`),
 
+  uploadImage: async (slug: string, file: File) => {
+    const reader = new FileReader();
+    const read = new Promise<string>((resolve, reject) => {
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+    });
+    reader.readAsDataURL(file);
+    const dataUrl = await read;
+    return request<{ url: string }>("/api/images", {
+      method: "POST",
+      body: JSON.stringify({
+        board: slug,
+        name: file.name || "paste",
+        type: file.type,
+        data: dataUrl.slice(dataUrl.indexOf(",") + 1),
+      }),
+    });
+  },
+
   preview: (url: string) =>
     request<{ preview: LinkPreview | null }>(`/api/preview?url=${encodeURIComponent(url)}`),
 };

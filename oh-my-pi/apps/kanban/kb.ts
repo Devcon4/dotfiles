@@ -6,43 +6,28 @@ if (majorNodeVersion < 24) {
 
 import { parseArgs } from "node:util";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import { homedir } from "node:os";
 import type * as Kit from "../../plugins/apphost/kit/kit.ts";
 import type * as Launch from "../../plugins/apphost/kit/launch.ts";
-import {
-  safeSlug,
-  SIZES,
-  StoreError,
-  archiveCard,
-  createBoard,
-  createCard,
-  isBlocked,
-  listBoards,
-  moveCard,
-  patchBoard,
-  patchCard,
-  promoteTask,
-  readBoard,
-  taskStats,
-  toggleCardTask,
-} from "./store.ts";
+import * as kb from "./client.ts";
+import { SIZES, isBlocked, taskStats } from "./store.ts";
 import type { Board, Card, CardPatch, Size } from "./store.ts";
-import { readActivity } from "./activity.ts";
-import type { ActivityEntry, Actor } from "./activity.ts";
+import type { Actor } from "./activity.ts";
 
 const kitDir = process.env.APP_KIT ?? resolve(import.meta.dirname, "../../plugins/apphost/kit");
 // The host passes the kit's location in APP_KIT; an app can live in any repo, so no static path reaches it.
 const kit: typeof Kit = await import(`${kitDir}/kit.ts`);
+const launch: typeof Launch = await import(`${kitDir}/launch.ts`);
 
-function isSize(v: string): v is Size {
-  return (SIZES as readonly string[]).includes(v);
-}
-
-function isActor(v: string): v is Actor {
-  return v === "user" || v === "ai";
-}
+const IMAGE_TYPES: Record<string, string> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+};
 
 function fail(msg: string): never {
   console.error(`kb: ${msg}`);
@@ -71,75 +56,34 @@ const { values: flags, positionals } = parseArgs({
     json: { type: "boolean" },
     archived: { type: "boolean" },
     review: { type: "boolean" },
+    session: { type: "boolean" },
     project: { type: "string" },
     "data-dir": { type: "string" },
   },
 });
 
 const [cmd, ...args] = positionals;
-const actor: Actor = flags.as === undefined ? "ai" : isActor(flags.as) ? flags.as : fail("--as must be user or ai");
-
+const actor: Actor =
+  flags.as === undefined ? "ai" : flags.as === "user" || flags.as === "ai" ? flags.as : fail("--as must be user or ai");
+const as = { actor };
 const relConfig = process.env.APP_CONFIG_PATH ?? ".omp/apps/kanban.json";
-let configEntry = process.env.APP_CONFIG
-  ? { root: process.env.APP_ROOT ?? dirname(dirname(dirname(process.env.APP_CONFIG))), config: process.env.APP_CONFIG }
-  : kit.findConfig(relConfig, process.cwd());
 
-if (!configEntry && cmd !== "init") {
-  fail(`kanban is not enabled for this repository. Run "kb init" to initialize.`);
-}
-
-const repoRoot = configEntry?.root ?? process.cwd();
-const configPath = configEntry?.config ?? join(repoRoot, relConfig);
-
-let conf: { project?: string; dataDir?: string } = {};
-if (configEntry && existsSync(configPath)) {
-  try {
-    conf = JSON.parse(readFileSync(configPath, "utf8"));
-  } catch {
-    fail(`${configPath} is not valid JSON`);
-  }
-}
-
-const project = conf.project ?? basename(repoRoot);
-const dataRoot = resolve(repoRoot, conf.dataDir ?? "docs/kanban");
-
-async function resolveCardTemplate(name: string): Promise<string> {
-  const filename = name.endsWith(".md") ? name : `${name}.md`;
-  const repoTemplate = join(dataRoot, "templates", filename);
-  if (existsSync(repoTemplate)) {
-    return await readFile(repoTemplate, "utf8");
-  }
-  const appTemplate = join(import.meta.dirname, "templates", filename);
-  if (existsSync(appTemplate)) {
-    return await readFile(appTemplate, "utf8");
-  }
-  fail(`template "${name}" not found in ${repoTemplate} or ${appTemplate}`);
-}
-
-function normCardId(s: string): string {
-  return s.replace(/^#/, "");
-}
-
-function findCard(board: Board, ref: string): Card {
-  const id = normCardId(ref);
-  return (
-    board.cards[id] ??
-    Object.values(board.cards).find((c) => `${c.num}` === id) ??
-    fail(`card ${ref} not found`)
-  );
+/** Starts the server if needed, records this repo's opt-in, and points the client at its project. */
+async function connect(): Promise<string> {
+  const launched = await launch.ensureAppServer(process.cwd());
+  const project = await kb.projectIdFor(launched.root);
+  kb.setProject(project);
+  return project;
 }
 
 async function buildPatch(): Promise<CardPatch> {
   const patch: CardPatch = {};
   if (flags.title !== undefined) patch.title = flags.title;
   if (flags["body-file"] !== undefined) {
-    if (existsSync(flags["body-file"])) {
-      patch.body = await readFile(flags["body-file"], "utf8");
-    } else {
-      patch.body = await resolveCardTemplate(flags["body-file"]);
-    }
+    const file = flags["body-file"];
+    patch.body = existsSync(file) ? await readFile(file, "utf8") : await kb.template(file);
   } else if (flags.template !== undefined && cmd !== "new-board") {
-    patch.body = await resolveCardTemplate(flags.template);
+    patch.body = await kb.template(flags.template);
   } else if (flags.body !== undefined) {
     patch.body = flags.body;
   }
@@ -147,7 +91,7 @@ async function buildPatch(): Promise<CardPatch> {
     patch.labels = flags.labels.split(",").map((s) => s.trim()).filter(Boolean);
   if (flags.size !== undefined) {
     if (flags.size === "none") patch.size = null;
-    else if (isSize(flags.size)) patch.size = flags.size;
+    else if ((SIZES as readonly string[]).includes(flags.size)) patch.size = flags.size as Size;
     else fail(`size must be one of ${SIZES.join("|")}|none`);
   }
   if (flags.assignee !== undefined) {
@@ -158,6 +102,11 @@ async function buildPatch(): Promise<CardPatch> {
   if (flags.color !== undefined) patch.color = flags.color === "none" ? null : flags.color;
   if (flags.blocked !== undefined) patch.blocked = flags.blocked === "none" ? null : flags.blocked;
   return patch;
+}
+
+function findCard(board: Board, ref: string): Card {
+  const id = ref.replace(/^#/, "");
+  return board.cards[id] ?? Object.values(board.cards).find((c) => `${c.num}` === id) ?? fail(`card ${ref} not found`);
 }
 
 function cardLine(board: Board, card: Card): string {
@@ -174,6 +123,45 @@ function cardLine(board: Board, card: Card): string {
   return bits.join(" ");
 }
 
+async function digest(): Promise<void> {
+  const project = await connect();
+  const stateDir = process.env.XDG_STATE_HOME ?? join(homedir(), ".local", "state");
+  const markerFile = join(stateDir, "omp-apps", `kanban-digest-${project}.json`);
+  let since = "";
+  try {
+    const marker: unknown = JSON.parse(readFileSync(markerFile, "utf8"));
+    if (marker && typeof marker === "object" && "lastAt" in marker && typeof marker.lastAt === "string") since = marker.lastAt;
+  } catch {
+    /* an unreadable marker means no previous session */
+  }
+
+  const d = await kb.digest(since);
+  const lines: string[] = [];
+  for (const b of d.boards) {
+    lines.push(`${b.name} (${b.slug}): ${b.columns.map((c) => `${c.name}: ${c.count}`).join(", ")}`);
+    if (b.review.length) lines.push(`  Review: ${b.review.map((c) => `#${c.num} (${c.title})`).join(", ")}`);
+    if (b.waiting > 0) lines.push(`  Waiting on other cards: ${b.waiting}`);
+    if (b.external.length) {
+      const shown = b.external
+        .slice(0, 3)
+        .map((c) => `#${c.num} (${c.blocked.length > 60 ? `${c.blocked.slice(0, 57)}...` : c.blocked})`);
+      const more = b.external.length > 3 ? `, +${b.external.length - 3} more` : "";
+      lines.push(`  Blocked outside the board: ${shown.join(", ")}${more}`);
+    }
+  }
+  if (d.userActions.length) {
+    lines.push("User actions since last session:");
+    for (const a of d.userActions) lines.push(`  - [${a.slug}] ${a.summary}`);
+  }
+
+  // Only the host's session-start call advances the marker, so agents running `kb digest` cannot hide your changes.
+  if (flags.session) {
+    mkdirSync(dirname(markerFile), { recursive: true });
+    writeFileSync(markerFile, JSON.stringify({ lastAt: new Date().toISOString() }) + "\n");
+  }
+  console.log(lines.length ? lines.join("\n") : `kanban: no active boards in ${project}`);
+}
+
 async function main(): Promise<void> {
   switch (cmd) {
     case "init": {
@@ -184,153 +172,54 @@ async function main(): Promise<void> {
         return;
       }
       const projectName = flags.project ?? basename(gitRoot);
-      const dataDirRel = flags["data-dir"] ?? "docs/kanban";
       mkdirSync(dirname(targetConfig), { recursive: true });
-      writeFileSync(targetConfig, JSON.stringify({ project: projectName, dataDir: dataDirRel }, null, 2) + "\n");
-      mkdirSync(join(gitRoot, dataDirRel, "boards"), { recursive: true });
+      writeFileSync(targetConfig, JSON.stringify({ project: projectName, dataDir: flags["data-dir"] ?? "docs/kanban" }, null, 2) + "\n");
       console.log(`kanban initialized for ${projectName} at ${targetConfig}`);
       return;
     }
 
     case "up": {
-      // The host passes launch helpers in APP_KIT/launch.ts.
-      const { ensureAppServer }: typeof Launch = await import(`${kitDir}/launch.ts`);
-      const launched = await ensureAppServer(process.cwd());
-      let projectUrl = launched.url;
-      try {
-        const res = await fetch(`http://localhost:5174/_app/open?root=${encodeURIComponent(repoRoot)}`);
-        if (res.ok) {
-          const data = (await res.json()) as { url: string };
-          if (data.url && data.url !== "http://localhost:5174/") {
-            projectUrl = data.url;
-          } else {
-            projectUrl = `http://localhost:5174/${project}/`;
-          }
-        }
-      } catch {
-        projectUrl = `http://localhost:5174/${project}/`;
-      }
-      console.log(projectUrl);
+      console.log(`http://localhost:5174/${await connect()}/`);
       return;
     }
 
-    case "digest": {
-      const listing = await listBoards(dataRoot);
-      const lines: string[] = [];
+    case "digest":
+      return digest();
+  }
 
-      for (const b of listing.boards) {
-        if (b.archived) continue;
-        const colSummary = b.columns
-          .map((col) => `${col.name}: ${(b.order[col.id] ?? []).length}`)
-          .join(", ");
-        lines.push(`${b.name} (${b.slug}): ${colSummary}`);
-
-        const reviewCols = b.columns.filter((c) => c.id.toLowerCase().includes("review") || c.name.toLowerCase().includes("review"));
-        const reviewCards: Card[] = [];
-        for (const rc of reviewCols) {
-          for (const cardId of b.order[rc.id] ?? []) {
-            const c = b.cards[cardId];
-            if (c && !c.completed && !c.archived) reviewCards.push(c);
-          }
-        }
-        if (reviewCards.length > 0) {
-          lines.push(`  Review: ${reviewCards.map((c) => `#${c.num} (${c.title})`).join(", ")}`);
-        }
-
-        const blockedCards = Object.values(b.cards).filter((c) => !c.completed && !c.archived && isBlocked(b, c));
-        const external = blockedCards.filter((c) => c.blocked);
-        const waiting = blockedCards.length - external.length;
-        if (waiting > 0) lines.push(`  Waiting on other cards: ${waiting}`);
-        if (external.length > 0) {
-          const shown = external.slice(0, 3).map((c) => `#${c.num} (${c.blocked!.length > 60 ? `${c.blocked!.slice(0, 57)}...` : c.blocked})`);
-          const more = external.length > 3 ? `, +${external.length - 3} more` : "";
-          lines.push(`  Blocked outside the board: ${shown.join(", ")}${more}`);
-        }
-      }
-
-      const stateDir = process.env.XDG_STATE_HOME ?? join(homedir(), ".local", "state");
-      const digestStateFile = join(stateDir, "omp-apps", `kanban-digest-${project}.json`);
-      let lastSessionAt = "";
-      try {
-        if (existsSync(digestStateFile)) {
-          const parsed = JSON.parse(readFileSync(digestStateFile, "utf8")) as { lastAt?: string };
-          lastSessionAt = parsed.lastAt ?? "";
-        }
-      } catch {
-        /* ignore */
-      }
-
-      const userActivities: Array<{ slug: string; entry: ActivityEntry }> = [];
-      for (const b of listing.boards) {
-        const acts = await readActivity(dataRoot, b.slug, 30);
-        for (const a of acts) {
-          if (a.actor === "user") {
-            if (!lastSessionAt || a.at > lastSessionAt) {
-              userActivities.push({ slug: b.slug, entry: a });
-            }
-          }
-        }
-      }
-
-      userActivities.sort((a, b) => a.entry.at.localeCompare(b.entry.at));
-      if (userActivities.length > 0) {
-        lines.push("User actions since last session:");
-        for (const ua of userActivities.slice(-5)) {
-          lines.push(`  - [${ua.slug}] ${ua.entry.summary}`);
-        }
-      }
-
-      try {
-        mkdirSync(dirname(digestStateFile), { recursive: true });
-        writeFileSync(digestStateFile, JSON.stringify({ lastAt: new Date().toISOString() }) + "\n");
-      } catch {
-        /* non-fatal */
-      }
-
-      if (lines.length === 0) {
-        console.log(`kanban: no active boards in ${project}`);
-      } else {
-        console.log(lines.join("\n"));
-      }
-      return;
-    }
-
+  await connect();
+  switch (cmd) {
     case "template": {
-      const name = args[0] ?? fail("usage: kb template <name>");
-      const content = await resolveCardTemplate(name);
-      process.stdout.write(content);
+      process.stdout.write(await kb.template(args[0] ?? fail("usage: kb template <name>")));
       return;
     }
 
     case "boards": {
-      const listing = await listBoards(dataRoot);
+      const listing = await kb.boards();
       if (flags.json) return void console.log(JSON.stringify(listing, null, 2));
       if (listing.boards.length === 0 && listing.unreadable.length === 0)
         return void console.log("no boards yet — kb new-board <name>");
-      for (const b of listing.boards) {
-        const active = Object.values(b.cards).filter((c) => !c.archived);
-        const done = active.filter((c) => c.completed).length;
-        const flag = b.archived ? " [archived]" : "";
-        console.log(`${b.slug}${flag} — ${b.name} (${done}/${active.length} done)`);
-      }
-      for (const u of listing.unreadable)
-        console.error(`⚠ ${u.slug} — UNREADABLE (${u.error}) — fix docs/kanban/boards/${u.slug}.json`);
+      for (const b of listing.boards)
+        console.log(`${b.slug}${b.archived ? " [archived]" : ""} — ${b.name} (${b.doneCount}/${b.cardCount} done)`);
+      for (const u of listing.unreadable) console.error(`⚠ ${u.slug} — UNREADABLE (${u.error}) — fix boards/${u.slug}.json`);
       return;
     }
 
     case "new-board": {
       const name = args[0] ?? fail("usage: kb new-board <name> [--slug s] [--accent #hex] [--template t] [--review]");
-      const board = await createBoard(
-        dataRoot,
-        { name, slug: flags.slug, accent: flags.accent, template: flags.template, review: flags.review },
+      const board = await kb.createBoard(name, {
+        slug: flags.slug,
+        accent: flags.accent,
+        template: flags.template,
+        review: flags.review,
         actor,
-      );
+      });
       console.log(`created board ${board.slug} (${board.columns.map((c) => c.id).join(" → ")})`);
       return;
     }
 
     case "show": {
-      const board = await readBoard(dataRoot, args[0] ?? fail("usage: kb show <board>"));
+      const board = await kb.board(args[0] ?? fail("usage: kb show <board>"));
       if (flags.json) return void console.log(JSON.stringify(board, null, 2));
       console.log(`${board.name} [${board.slug}] — labels: ${board.labels.map((l) => l.id).join(", ") || "none"}`);
       for (const col of board.columns) {
@@ -351,8 +240,8 @@ async function main(): Promise<void> {
     }
 
     case "card": {
-      const [slug, ref] = [args[0], args[1] ?? fail("usage: kb card <board> <card>")];
-      const board = await readBoard(dataRoot, slug);
+      const ref = args[1] ?? fail("usage: kb card <board> <card>");
+      const board = await kb.board(args[0]);
       const card = findCard(board, ref);
       if (flags.json) return void console.log(JSON.stringify(card, null, 2));
       console.log(cardLine(board, card));
@@ -365,40 +254,30 @@ async function main(): Promise<void> {
     }
 
     case "add": {
-      const [slug, title] = [args[0], args[1] ?? fail("usage: kb add <board> <title> [flags]")];
-      const patch = await buildPatch();
-      const { card } = await createCard(
-        dataRoot,
-        slug,
-        {
-          ...patch,
-          title,
-          column: flags.column,
-          index: flags.index !== undefined ? Number(flags.index) : undefined,
-        },
+      const title = args[1] ?? fail("usage: kb add <board> <title> [flags]");
+      const card = await kb.add(args[0], title, {
+        ...(await buildPatch()),
+        column: flags.column,
+        index: flags.index !== undefined ? Number(flags.index) : undefined,
         actor,
-      );
+      });
       console.log(`added #${card.num} "${card.title}" to ${flags.column ?? "first column"}`);
       return;
     }
 
     case "edit": {
-      const [slug, ref] = [args[0], args[1] ?? fail("usage: kb edit <board> <card> [flags]")];
-      const { card } = await patchCard(dataRoot, slug, normCardId(ref), await buildPatch(), actor);
+      const ref = args[1] ?? fail("usage: kb edit <board> <card> [flags]");
+      const card = await kb.edit(args[0], ref, { ...(await buildPatch()), actor });
       console.log(`updated #${card.num} "${card.title}"`);
       return;
     }
 
     case "move": {
-      const [slug, ref, column] = [args[0], args[1], args[2] ?? fail("usage: kb move <board> <card> <column>")];
-      const { card } = await moveCard(
-        dataRoot,
-        slug,
-        normCardId(ref),
-        column,
-        flags.index !== undefined ? Number(flags.index) : undefined,
+      const column = args[2] ?? fail("usage: kb move <board> <card> <column>");
+      const card = await kb.move(args[0], args[1], column, {
+        index: flags.index !== undefined ? Number(flags.index) : undefined,
         actor,
-      );
+      });
       console.log(`moved #${card.num} → ${column}${card.completed ? " (completed)" : ""}`);
       return;
     }
@@ -407,7 +286,7 @@ async function main(): Promise<void> {
     case "undone": {
       const slug = args[0] ?? fail(`usage: kb ${cmd} <board> <card...>`);
       for (const ref of args.slice(1)) {
-        const { card } = await patchCard(dataRoot, slug, normCardId(ref), { completed: cmd === "done" }, actor);
+        const card = await kb.complete(slug, ref, cmd === "done", as);
         console.log(`${cmd === "done" ? "✓" : "·"} #${card.num} ${card.title}`);
       }
       return;
@@ -417,7 +296,7 @@ async function main(): Promise<void> {
     case "restore": {
       const slug = args[0] ?? fail(`usage: kb ${cmd} <board> <card...>`);
       for (const ref of args.slice(1)) {
-        const { card } = await archiveCard(dataRoot, slug, normCardId(ref), cmd === "archive", flags.column, actor);
+        const card = await kb.archiveCard(slug, ref, cmd === "archive", { restoreColumn: flags.column, actor });
         console.log(`${cmd}d #${card.num} ${card.title}`);
       }
       return;
@@ -426,10 +305,7 @@ async function main(): Promise<void> {
     case "label": {
       const [slug, id, name, color] = args;
       if (!color) fail("usage: kb label <board> <id> <name> <#color>");
-      const board = await readBoard(dataRoot, slug);
-      const labels = board.labels.filter((l) => l.id !== id);
-      labels.push({ id, name, color });
-      await patchBoard(dataRoot, slug, { labels }, actor);
+      await kb.label(slug, id, name, color, as);
       console.log(`label ${id} set`);
       return;
     }
@@ -437,7 +313,7 @@ async function main(): Promise<void> {
     case "task": {
       const [slug, ref, index, state] = args;
       if (!state) fail("usage: kb task <board> <card> <index> <on|off>");
-      const { card } = await toggleCardTask(dataRoot, slug, normCardId(ref), Number(index), state === "on", actor);
+      const card = await kb.toggleTask(slug, ref, Number(index), state === "on", as);
       const t = taskStats(card.body);
       console.log(`#${card.num} tasks: ${t.done}/${t.total}`);
       return;
@@ -446,70 +322,38 @@ async function main(): Promise<void> {
     case "attach": {
       const [slug, ref, srcPath] = args;
       if (!srcPath) fail("usage: kb attach <board> <card> <image-file> [--alt text]");
-      const ext = srcPath.slice(srcPath.lastIndexOf(".")).toLowerCase();
-      const okExt: Record<string, true> = { ".png": true, ".jpg": true, ".jpeg": true, ".webp": true, ".gif": true };
-      if (!okExt[ext]) fail(`unsupported image type ${ext} (png/jpg/webp/gif)`);
-      const board = await readBoard(dataRoot, slug);
-      const card =
-        board.cards[normCardId(ref)] ??
-        Object.values(board.cards).find((c) => `${c.num}` === normCardId(ref)) ??
-        fail(`card ${ref} not found`);
+      const type = IMAGE_TYPES[srcPath.slice(srcPath.lastIndexOf(".")).toLowerCase()];
+      if (!type) fail(`unsupported image type ${srcPath} (png/jpg/webp/gif)`);
       const bytes = await readFile(srcPath);
-      const hint = basename(srcPath)
-        .toLowerCase()
-        .replace(/\.[a-z0-9]+$/, "")
-        .replace(/[^a-z0-9-]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 40) || "shot";
-      const file = `${hint}-${Date.now().toString(36)}${ext === ".jpeg" ? ".jpg" : ext}`;
-      const dir = join(dataRoot, "images", board.slug);
-      await mkdir(dir, { recursive: true });
-      await writeFile(join(dir, file), bytes);
-      const alt = flags.alt ?? "";
-      const md = `![${alt}](/${project}/images/${board.slug}/${file})`;
-      const body = card.body.trim() ? `${card.body.replace(/\s+$/, "")}\n\n${md}\n` : `${md}\n`;
-      await patchCard(dataRoot, slug, card.id, { body }, actor);
-      console.log(`attached ${file} to #${card.num} (${(bytes.length / 1024).toFixed(0)}KB)`);
+      const { card, url } = await kb.attach(
+        slug,
+        ref,
+        { name: basename(srcPath), type, data: bytes.toString("base64"), alt: flags.alt },
+        as,
+      );
+      console.log(`attached ${basename(url)} to #${card.num} (${(bytes.length / 1024).toFixed(0)}KB)`);
       return;
     }
 
     case "mockup": {
       const [slug, ref, srcPath] = args;
       if (!srcPath) fail("usage: kb mockup <board> <card> <file.html> [--title T]");
-      const ext = srcPath.slice(srcPath.lastIndexOf(".")).toLowerCase();
-      if (ext !== ".html" && ext !== ".htm") fail("mockups must be .html");
-      const board = await readBoard(dataRoot, slug);
-      const card =
-        board.cards[normCardId(ref)] ??
-        Object.values(board.cards).find((c) => `${c.num}` === normCardId(ref)) ??
-        fail(`card ${ref} not found`);
-      const html = await readFile(srcPath, "utf8");
-      const name =
-        basename(srcPath)
-          .toLowerCase()
-          .replace(/\.html?$/, "")
-          .replace(/[^a-z0-9-]+/g, "-")
-          .replace(/^-+|-+$/g, "")
-          .slice(0, 48) || "mockup";
-      const dir = join(dataRoot, "mockups", board.slug);
-      await mkdir(dir, { recursive: true });
-      const file = `${name}.html`;
-      await writeFile(join(dir, file), html);
-      const title = flags.title ?? name;
-      const md = `[${title}](/${project}/mockups/${board.slug}/${file})`;
-      const body = card.body.trim() ? `${card.body.replace(/\s+$/, "")}\n\n${md}\n` : `${md}\n`;
-      await patchCard(dataRoot, slug, card.id, { body }, actor);
-      console.log(`mockup ${file} → #${card.num} (view it in the panel)`);
+      if (!/\.html?$/i.test(srcPath)) fail("mockups must be .html");
+      const { card, url } = await kb.mockup(
+        slug,
+        ref,
+        { name: basename(srcPath), html: await readFile(srcPath, "utf8"), title: flags.title },
+        as,
+      );
+      console.log(`mockup ${basename(url)} → #${card.num} (view it in the panel)`);
       return;
     }
 
     case "stats": {
-      const slug = args[0] ?? fail("usage: kb stats <board> [--json]");
-      const board = await readBoard(dataRoot, slug);
+      const board = await kb.board(args[0] ?? fail("usage: kb stats <board> [--json]"));
       const active = Object.values(board.cards).filter((c) => !c.archived);
       const labels = board.labels.map((label) => {
         const cards = active.filter((c) => c.labels.includes(label.id));
-        const completed = cards.filter((c) => c.completed).length;
         const tasks = cards.reduce(
           (acc, c) => {
             const t = taskStats(c.body);
@@ -517,25 +361,17 @@ async function main(): Promise<void> {
           },
           { total: 0, done: 0 },
         );
-        return { id: label.id, name: label.name, active: cards.length, completed, tasks };
+        return { id: label.id, name: label.name, active: cards.length, completed: cards.filter((c) => c.completed).length, tasks };
       });
-      const columns = board.columns.map((col) => ({
-        id: col.id,
-        name: col.name,
-        count: board.order[col.id].length,
-      }));
+      const columns = board.columns.map((col) => ({ id: col.id, name: col.name, count: board.order[col.id].length }));
       const done = active.filter((c) => c.completed).length;
       const blocked = active
         .filter((c) => isBlocked(board, c))
         .map((c) => {
           const bits: string[] = [];
           if (c.blocked) bits.push(c.blocked);
-          const openBlockers = c.blockedBy.filter((id) => {
-            const b = board.cards[id];
-            return b && !b.completed && !b.archived;
-          });
-          if (openBlockers.length)
-            bits.push(`blocked by ${openBlockers.map((id) => `#${board.cards[id].num}`).join(", ")}`);
+          const open = c.blockedBy.filter((id) => board.cards[id] && !board.cards[id].completed && !board.cards[id].archived);
+          if (open.length) bits.push(`blocked by ${open.map((id) => `#${board.cards[id].num}`).join(", ")}`);
           return { num: c.num, title: c.title, reason: bits.join("; ") || "unknown" };
         });
       const report = { board: board.slug, labels, columns, total: { done, total: active.length }, blocked };
@@ -559,8 +395,7 @@ async function main(): Promise<void> {
 
     case "activity": {
       const slug = args[0] ?? fail("usage: kb activity <board> [--lines n] [--json]");
-      const limit = flags.lines !== undefined ? Number(flags.lines) : 20;
-      const entries = await readActivity(dataRoot, slug, limit);
+      const entries = await kb.activity(slug, flags.lines !== undefined ? Number(flags.lines) : 20);
       if (flags.json) return void console.log(JSON.stringify(entries, null, 2));
       for (const e of entries) {
         const d = new Date(e.at);
@@ -570,24 +405,9 @@ async function main(): Promise<void> {
     }
 
     case "find": {
-      const query = args.join(" ").trim().toLowerCase();
+      const query = args.join(" ").trim();
       if (!query) fail("usage: kb find <query>");
-      const { boards, unreadable } = await listBoards(dataRoot);
-      const results: string[] = [];
-      search: for (const board of boards) {
-        for (const col of board.columns) {
-          for (const id of board.order[col.id]) {
-            const card = board.cards[id];
-            const hay = `${card.title}\n${card.body}\n#${card.num}`.toLowerCase();
-            if (!hay.includes(query)) continue;
-            results.push(`${board.slug} #${card.num} [${col.id}] ${card.title}`);
-            if (results.length >= 30) break search;
-          }
-        }
-      }
-      for (const line of results) console.log(line);
-      for (const u of unreadable)
-        console.error(`⚠ ${u.slug} — UNREADABLE (${u.error}) — fix docs/kanban/boards/${u.slug}.json`);
+      for (const r of (await kb.search(query)).slice(0, 30)) console.log(`${r.slug} #${r.num} [${r.column}] ${r.title}`);
       return;
     }
 
@@ -596,43 +416,42 @@ async function main(): Promise<void> {
       const [slug, ref, ...blockerRefs] = args;
       if (blockerRefs.length === 0)
         fail(`usage: kb ${cmd} <board> <card> <blockerCard...${cmd === "unlink" ? "|all" : ""}>`);
-      const board = await readBoard(dataRoot, slug);
-      const card = findCard(board, ref);
-      let blockedBy: string[];
-      if (cmd === "link") {
-        const add = blockerRefs.map((r) => findCard(board, r).id);
-        blockedBy = [...new Set([...card.blockedBy, ...add])];
-      } else if (blockerRefs.length === 1 && blockerRefs[0] === "all") {
-        blockedBy = [];
-      } else {
-        const remove = new Set(blockerRefs.map((r) => findCard(board, r).id));
-        blockedBy = card.blockedBy.filter((id) => !remove.has(id));
-      }
-      const { card: updated } = await patchCard(dataRoot, slug, card.id, { blockedBy }, actor);
+      const updated =
+        cmd === "link"
+          ? await kb.link(slug, ref, blockerRefs, as)
+          : await kb.unlink(slug, ref, blockerRefs.length === 1 && blockerRefs[0] === "all" ? "all" : blockerRefs, as);
+      const board = await kb.board(slug);
       const list = updated.blockedBy.map((id) => `#${board.cards[id]?.num ?? id}`).join(", ");
       console.log(`#${updated.num} blockedBy: ${list || "none"}`);
+      return;
+    }
+
+    case "append": {
+      const ref = args[1] ?? fail("usage: kb append <board> <card> --body md | --body-file f");
+      const text = flags["body-file"] !== undefined ? await readFile(flags["body-file"], "utf8") : flags.body;
+      if (!text?.trim()) fail("kb append needs --body or --body-file");
+      const card = await kb.appendBody(args[0], ref, text, as);
+      console.log(`appended to #${card.num} "${card.title}"`);
       return;
     }
 
     case "brief": {
       const slug = args[0] ?? fail("usage: kb brief <board> [--body md | --body-file f]");
       if (flags["body-file"] !== undefined || flags.body !== undefined) {
-        const body =
-          flags["body-file"] !== undefined ? await readFile(flags["body-file"], "utf8") : (flags.body ?? "");
-        const board = await patchBoard(dataRoot, slug, { brief: body }, actor);
+        const text = flags["body-file"] !== undefined ? await readFile(flags["body-file"], "utf8") : (flags.body ?? "");
+        const board = await kb.setBrief(slug, text, as);
         console.log(`brief updated (${board.brief.length} chars)`);
         return;
       }
-      const board = await readBoard(dataRoot, slug);
-      console.log(board.brief || "(no brief)");
+      console.log((await kb.board(slug)).brief || "(no brief)");
       return;
     }
 
     case "promote": {
       const [slug, ref, indexStr] = args;
       if (indexStr === undefined) fail("usage: kb promote <board> <card> <taskIndex>");
-      const { board, card } = await promoteTask(dataRoot, slug, normCardId(ref), Number(indexStr), actor);
-      console.log(cardLine(board, card));
+      const card = await kb.promote(slug, ref, Number(indexStr), as);
+      console.log(cardLine(await kb.board(slug), card));
       return;
     }
 
@@ -641,7 +460,4 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((e: unknown) => {
-  if (e instanceof StoreError) fail(e.message);
-  throw e;
-});
+main().catch((e: unknown) => fail(e instanceof Error ? e.message : String(e)));
