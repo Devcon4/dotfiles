@@ -89,7 +89,7 @@ render_to oh-my-posh/national-park.omp.json "$HOME/.config/oh-my-posh/national-p
 mkdir -p "$HOME/.omp/agent"
 cp oh-my-pi/config.yml "$HOME/.omp/agent/"
 render_to oh-my-pi/lsp.json "$HOME/.omp/agent/lsp.json"
-cp -r oh-my-pi/rules oh-my-pi/skills oh-my-pi/hooks oh-my-pi/extensions oh-my-pi/themes "$HOME/.omp/agent/"
+cp -r oh-my-pi/rules oh-my-pi/skills oh-my-pi/agents oh-my-pi/hooks oh-my-pi/extensions oh-my-pi/themes "$HOME/.omp/agent/"
 # omp apps: user apps are a symlink into this repo; the host plugin is linked so edits here are live
 if [[ -L $HOME/.omp/agent/apps || ! -e $HOME/.omp/agent/apps ]]; then
   ln -sfn "$PWD/oh-my-pi/apps" "$HOME/.omp/agent/apps"

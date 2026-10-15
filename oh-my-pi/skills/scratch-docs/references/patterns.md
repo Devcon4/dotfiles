@@ -1,139 +1,161 @@
 # Scratch-doc templates
 
-Skeletons are **starting points, not forms to fill**. Start from the matching one, then
-reshape it to this run's problem: delete sections with nothing to say, add ones the
-problem demands, vary list/option counts. What never bends: the three-line header, and
-the evidence/disposition rules where a template states them.
+Skeletons are starting points, not forms to fill. Start from the matching one, then reshape
+it to the problem: delete sections with nothing to say, add ones the problem demands, vary
+counts. What never bends: the three-line header, and the evidence and disposition rules
+where a template states them.
 
 ## `<slug>.proposal.md`
 
-Voice: a **concise pitch to the dev**, in plain English. Assume they haven't read the
-code. Every decision carries its reasoning + evidence so the dev can validate it. Terms
-follow the domain's ubiquitous language (match the code, schemas, `AGENTS.md` and README, no synonyms); a new
-concept is named once, defined in one line, used consistently. Bullets over paragraphs;
-every sentence earns its place.
+A concise pitch to the dev in plain English. Assume the dev has not read the code. Every
+decision carries its reasoning and evidence; terms match the code, schemas, `AGENTS.md`
+and README.
 
 ```markdown
 Status: draft
 Updated: <YYYY-MM-DD>
 Owner: <dev or agent>
 
-# Proposal — <title>
+# Proposal: <title>
+
+**Recommendation:** <two or three sentences: what to build and why.>
+
+**Key tradeoff:** <the one cost the dev accepts by approving.>
+
+**Needs your call:** Q1, Q2 <or "nothing">
+
+## Pitch (unconfirmed)
+<Only in unattended runs, until the dev confirms the pitch. One sentence, then Shape,
+Assumed, New terms, Not doing.>
 
 ## Problem
-<What hurts / what's wanted, in the dev's terms. 2–5 sentences.>
+<What hurts or what is wanted, in the dev's terms. Two to five sentences.>
 
 ## Constraints
-- <stated constraint>
+- <stated constraint> (dev)
 - <inferred constraint> (inferred)
 
 ## Current state
-<Only what the dev needs to judge the design: what exists, what's missing, the few facts
-the recommendation turns on. Grounded (`path/file.ts:123`) and a screenful at most. A
-fact justifying one specific decision moves next to that decision; a fact no section
-uses stays in the notes doc.>
+<Only what the dev needs to judge the design, grounded (`path/file.ts:123`), a screenful at
+most. A fact that justifies one decision moves next to that decision; a fact no section uses
+stays in the notes doc.>
 
 ## Proposed design
-<The recommended path, in enough detail to attack: data flow, touched components,
-contracts. Code-shaped: sketch the key signatures/types in a short snippet the dev can
-mark up — skeleton, not implementation. Flow-shaped and genuinely non-obvious: a small
-mermaid diagram of just that flow; simple sequences stay prose.>
-- Tradeoffs: <cost / risk>
+<The recommended path in enough detail to attack: data flow, touched components,
+contracts. Code-shaped: a short sketch of the key signatures or types. Flow-shaped and
+non-obvious: a small mermaid diagram of that flow.>
+- Tradeoffs: <cost or risk>
 
-### Alternatives considered  (as many as genuinely exist — zero is honest, four is fine)
-- <name> — <one line: what it is; why it loses>. Promote to a full subsection when two
-  paths are genuinely close and the dev should pick.
+### Alternatives considered
+- <name>: <what it is; why it loses>. Promote to a subsection when two paths are close and
+  the dev should pick. Zero alternatives is honest when one path is.
 
-## Risks & migration
+## Risks and migration
 - <risk> → <mitigation>
-- Rollout: <order>; Rollback: <how>
+- Rollout: <order>. Rollback: <how>.
 
-## Execution sketch  (high-level phases only; delete if obvious)
-<Detailed decomposition happens AFTER approval, in a .tasks.md / .runbook.md.>
+## Execution sketch
+<High-level phases only; delete if obvious. The spec does the decomposition.>
 
-## Open questions  (delete if none)
-- <question only the dev can answer>
+## Open questions
+1. Q1: <a call only the dev can make>
+
+## Decisions
+- D-1 (dev, <YYYY-MM-DD>): <ruling, close to the dev's words> (answers Q<n>)
 
 ## Review log
-<For agents, not the dev: what was already reviewed, so a later session doesn't
-re-litigate settled findings.>
-- round 1 (<date>, mode: parallel|sequential): <top findings → what changed>
+<For agents, not the dev: what was reviewed, so a later session does not re-litigate it.>
+- round 1 (<date>, <size>, mode: parallel|sequential): fact 3, risk 4, scope-add 2 (→ Q3,
+  Q4), scope-cut 1, prose 2; accepted 9, rejected 1; net +12 lines.
 ```
 
-## `<slug>.tasks.md`
+## `<slug>.spec.md`
 
-The single execution tracker — no parallel status doc for the same effort.
-
-```markdown
-Status: draft → executing when work starts
-Updated: <YYYY-MM-DD>
-Owner: <who>
-
-# Tasks — <title>   (from <slug>.proposal.md)
-
-## Phase 1 — <name>
-- [ ] <task, 5–10 words> — accept: <observable criterion> ∥ (parallelizable)
-- [x] <task> — accept: <criterion> — done: <evidence: run/output/file:line>
-- [ ] Gate: <observable check that closes the phase>
-
-## Phase 2 — <name>  (blocked by Phase 1: <why>)
-- [ ] …
-```
-
-## `<slug>.matrix.md`
-
-A matrix is TWO-dimensional: rows × columns are the problem's axes. If you're writing
-item-per-row with a status column, that's a task list — use `tasks` instead.
-
-```markdown
-Status: executing
-Updated: <YYYY-MM-DD>
-Owner: <orchestrator>
-
-# Matrix — <title>
-Axes: rows = <e.g. entity/workflow>; columns = <e.g. operation/coverage layer>.
-
-|        | create | update | delete | drift-repair |
-| ------ | ------ | ------ | ------ | ------------ |
-| realm  | ✔ envtest `TestRealmCreate` | doing | todo | — n/a: <why> |
-| client | todo   | todo   | todo   | todo         |
-
-Cells: todo / doing / blocked(<why>) / ✔ <evidence> / — n/a: <why>.
-A ✔ REQUIRES evidence in the cell; an empty cell is an UNEXAMINED hole — resolve every
-cell to worked or n/a before `done`. Single writer: orchestrator merges subagent cells.
-```
-
-## `<slug>.runbook.md`
-
-Written for an executor with NO repo context — inline everything. Anchor edits to
-symbols/strings with line numbers as hints only — lines drift between authoring and
-execution; the content anchor is authoritative.
+The proposal turned into a contract agents execute. `## Context` passes verbatim as the
+task `context`; each unit section passes verbatim as one `task`. Anchor edits to symbols
+and strings, with line numbers as hints only: lines drift between writing and execution.
 
 ```markdown
 Status: draft
 Updated: <YYYY-MM-DD>
-Owner: <author>
+Owner: <orchestrator or lead>
+Source: <slug>.proposal.md revised-N
+Board: <board slug, or none>
 
-# Runbook — <title>
+# Spec: <title>
 
-Executing without repo context: everything you need is inlined. Work from <repo root>.
-Check each box and fill each Verify as you go. A failed Verify means STOP and report —
-do not improvise.
+## Waiting on the dev
+<Only without a board: questions blocking a unit, each with the unit id.>
 
-## Preconditions
-- <thing that must be true; exact command to check it>
+## Context
+Goal: <two lines>
+Rules for implementers:
+- Edit only the files your unit lists; create files only at the paths it gives.
+- Do not compile, run the editor or run tests unless your unit says to; the oracle verifies.
+- Do not write this spec or the board. When something is unclear, stop and ask the lead.
+Terms and units: <invariants, coordinate systems, glossary>
+Shared contracts: <types and signatures more than one unit uses>
+Build gate: <exact command and expected result>
+Proof: <where screenshots and command output go>
 
-## Steps  (execute in order; check the box + fill Verify as you go)
-- [ ] 1. <imperative step>
-      Run: `<exact command / exact edit with file path>`
-      Verify: `<command>` → expect <observable output>
-- [ ] 2. …
+## S-1 <name>
+Implements: <proposal section>, D-2
+Depends on: none
+Files: edit `<path>`; create `<path>`
+Card: #<n> <only when the spec names a board>
+Contract: <signatures, types, behaviour>
+Acceptance:
+- <observable check> → `<exact command>` prints <expected>
+Out of scope: <what this unit must not do>
+Status: todo
+Evidence: <oracle verdict, check output, proof path>
 
-## Rollback
-<Exact steps to undo, per phase if partial.>
+## Waves
+1. S-1, S-2 (no shared files). Gate: <build passes>.
+2. S-3. Gate: <build passes>. Handoff: <what the dev looks at or wires by hand>.
 
-## Log  (executor appends)
-- <date/agent>: completed through step N; deviations: <none | what+why>
+## Coverage
+| Proposal item or decision | Units |
+| --- | --- |
+| <section> | S-1, S-3 |
+| D-2 | S-3 |
+| <item> | dropped: <reason>, dev OK <date> |
+
+## Amendments
+- <date>: S-<n> <what changed> because <why>.
+```
+
+## `<slug>.investigation.md`
+
+```markdown
+Status: draft
+Updated: <YYYY-MM-DD>
+Owner: <agent>
+
+# Investigation: <question>
+
+Unblocks: <decision or work waiting on the answer>
+Budget: <agents, time>. Stop when <rule>.
+
+## Known
+- <grounded fact> (`file:line`, output, screenshot)
+
+## Branches
+<mermaid tree when there are more than three branches>
+
+| Id | Hypothesis or option | Probe | Cost | Result | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| B1 | <cause or option> | read: <what> | low | <what was found> | pruned: <why> |
+| B2 | <cause or option> | build: <spike> | medium | <what happened> | confirmed |
+| B3 | <cause or option> | measure: <what> | low |  | open |
+
+## Spike code
+<path; removed on <date>, or kept as a stopgap with the dev's OK on <date> and removed by
+<spec unit or card>.>
+
+## Exit
+Answer: <one or two sentences>.
+Next: <proposal | spec | card #n | ADR | dead end recorded>.
 ```
 
 ## `<slug>.findings.md`
@@ -143,21 +165,21 @@ Status: in-review
 Updated: <YYYY-MM-DD>
 Owner: <orchestrator>
 
-# Findings — <title>   (target: <slug>.proposal.md rev N)
-Reviewers: <lens list> · Mode: <parallel | sequential>
+# Findings: <title> (target: <slug>.proposal.md rev N)
+Board: <size>; lenses: <list>. Mode: <parallel | sequential>
 
-| # | Sev | Lens | Finding | Evidence | Disposition |
-| --- | --- | --- | --- | --- | --- |
-| 1 | high/med/low | security | <claim> | <file:line / quote> | fixed in rev N+1 / rejected: <why> |
+| # | Kind | Sev | Lens | Finding | Evidence | If ignored | Disposition |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | fact | major | fact check | <claim> | `<file:line>` | <consequence> | fixed in rev N+1 |
+| 2 | scope-add | minor | author | <claim> | <quote> | <consequence> | → Q3 for the dev |
+| 3 | risk | blocker | runtime | <claim> | `<file:line>` | <consequence> | rejected: <why> |
 
-Lens = which reviewer perspective produced the row; it routes re-review after a
-revision (re-run only the affected lens) and dedupe.
-Every row gets a Disposition before the proposal can move to `approved`.
-A reviewer reporting "nothing found" lists what it checked.
-Later review rounds append a `# Round N (target: rev …)` section with their own
-reviewer list; numbering continues across rounds so dispositions can be
-cross-referenced. Each round after the first includes a fix-verification pass over the
-prior round's `fixed` rows.
+Kinds: fact, risk, scope-add, scope-cut, prose. Severity: blocker, major, minor.
+Dispositions follow the skill's table; scope-add rows go to the dev as questions.
+A reviewer reporting nothing lists what it checked.
+Later rounds append `# Round N (target: rev …)` with their own reviewers. Numbering
+continues across rounds, and each round after the first verifies the prior round's
+`fixed` rows.
 ```
 
 ## `<slug>.notes.md`
@@ -167,7 +189,7 @@ Status: draft
 Updated: <YYYY-MM-DD>
 Owner: <agent>
 
-# Notes — <research question(s)>
+# Notes: <research question(s)>
 
 ## Q: <question>
 A: <answer>. Sources: <file:line, URL, command output>.
@@ -175,42 +197,62 @@ A: <answer>. Sources: <file:line, URL, command output>.
 
 ## `<slug>.brainstorm.md`
 
-The output of an expert room (SKILL.md → "The brainstorm room"). Size the session first
-(small/medium/large per the skill's table) and record it. Synthesis is single-author;
-group proposals are appended verbatim — they are the evidence, never rewritten. Large
-sessions branch out: standalone group findings graduate into their own
-`proposal`/`tasks`/custom docs rather than dying in an appendix.
+The output of an expert room. Synthesis is single-author; group proposals are appended
+verbatim as evidence, never rewritten. Large sessions branch out: a standalone group finding
+graduates into its own doc rather than dying in an appendix.
 
 ```markdown
-Status: draft (for dev decision)
+Status: draft
 Updated: <YYYY-MM-DD>
 Owner: dev + <orchestrator>
-Session: <small|medium|large> — <one-line why>
+Session: <small|medium|large>: <one-line why>
 
-# Brainstorm — <design question>
+# Brainstorm: <design question>
 
-How this was made: <N> expert agents (<lens list>) self-organized into <M> groups over
-hub/IRC; each group's full proposal is appended verbatim. This header is the synthesis.
+How this was made: <N> agents (<lens list>) in <M> groups assigned by design family; each
+group's full proposal is appended verbatim. This header is the synthesis.
 
-## The headline  (lead with convergence/divergence — what did independent groups agree on?)
+## Convergence and divergence
 
 | | <Group A> | <Group B> | <Group C> |
 | --- | --- | --- | --- |
 | Shape | ... | ... | ... |
-| <the dev's key constraint, e.g. reflection count> | ... | ... | ... |
+| <the dev's key constraint> | ... | ... | ... |
 | Files touched / net LOC | ... | ... | ... |
 | <hole it closes / risk it adds> | ... | ... | ... |
-| Key dissent recorded | ... | ... | ... |
+| Dissent recorded | ... | ... | ... |
 
 ## My read (yours to overrule)
-<2-4 numbered positions: what to adopt, what to decide separately, what to archive.>
+<Two to four numbered positions: what to adopt, what to decide separately, what to archive.>
 
 ## Dev calls
-1. <decision only the dev can make>
+1. Q1: <decision only the dev can make>
 
 ---
 
-# APPENDIX — group proposal: <Group A>
+# Appendix: group proposal <Group A>
 <verbatim group document>
 ```
 
+## `<slug>.matrix.md`
+
+Two-dimensional: rows and columns are the problem's axes. A list of work items with a status
+column is a spec.
+
+```markdown
+Status: executing
+Updated: <YYYY-MM-DD>
+Owner: <orchestrator>
+
+# Matrix: <title>
+Axes: rows = <entity or workflow>; columns = <operation or coverage layer>.
+
+|        | create | update | delete | drift-repair |
+| ------ | ------ | ------ | ------ | ------------ |
+| realm  | ✔ envtest `TestRealmCreate` | doing | todo | n/a: <why> |
+| client | todo   | todo   | todo   | todo         |
+
+Cells: todo, doing, blocked: <why>, ✔ <evidence>, n/a: <why>.
+A ✔ needs evidence in the cell. An empty cell is an unexamined hole; resolve every cell
+before `done`. Single writer: the orchestrator merges subagent cells.
+```

@@ -226,10 +226,12 @@ await kb.unlink("my-board", 12, "all");
 
 ### Seeding a board from a plan doc
 1. Create board: `kb new-board "<Name>" [--review]`.
-2. Extract self-contained deliverables as cards: `kb add <board> "<Title>"`.
+2. Extract the deliverables the dev can see or playtest as cards: `kb add <board> "<Title>"`.
+   For a scratch-docs `spec`, a card covers one or more units and names them in its body
+   as plain text, not `- [ ]` items; unit status and evidence stay in the spec.
 3. Sub-steps belong as `- [ ]` checklist items in card bodies, not separate cards.
 4. Set dependencies using `kb link <board> <card> <blocker...>`.
-5. Point the source doc at the board for live execution tracking.
+5. Point the source doc at the board in its header (`Board: <slug>`).
 
 ### Standup / status report
 1. `kb boards` to view active boards.

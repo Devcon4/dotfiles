@@ -20,8 +20,8 @@ cp ~/.gitconfig git/gitconfig
 cp ~/.config/oh-my-posh/national-park.omp.json oh-my-posh/
 
 cp ~/.omp/agent/config.yml ~/.omp/agent/lsp.json oh-my-pi/
-rm -rf oh-my-pi/rules oh-my-pi/skills oh-my-pi/hooks oh-my-pi/extensions oh-my-pi/themes
-cp -r ~/.omp/agent/rules ~/.omp/agent/skills ~/.omp/agent/hooks ~/.omp/agent/extensions ~/.omp/agent/themes oh-my-pi/
+rm -rf oh-my-pi/rules oh-my-pi/skills oh-my-pi/agents oh-my-pi/hooks oh-my-pi/extensions oh-my-pi/themes
+cp -r ~/.omp/agent/rules ~/.omp/agent/skills ~/.omp/agent/agents ~/.omp/agent/hooks ~/.omp/agent/extensions ~/.omp/agent/themes oh-my-pi/
 
 # standalone theme repos (VS Code extension + Firefox theme)
 rm -rf themes/vscode themes/firefox
