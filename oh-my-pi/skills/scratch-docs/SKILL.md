@@ -168,13 +168,15 @@ Assume the dev has not read the code you read:
 
 A spec turns an approved proposal into units an agent can execute without the chat:
 
-1. `## Context`: the goal, rules for implementers (which files they may touch, what they
-   must not run), terms and units, contracts shared by several units, the build gate, and
-   where proof goes. It is passed verbatim as the task `context`, so it stands alone.
+1. `## Context`: the goal, rules for implementers (which files they may touch, how they
+   check their work, when they ask), terms and units, contracts shared by several units,
+   the LSP preflight result, the checks safe to run in parallel, the build gate, the wave
+   roster, and where proof goes. It is passed verbatim as the task `context`, so it stands
+   alone.
 2. One `## S-<n> <name>` section per unit: Implements (proposal sections and `D-` ids),
    Depends on, Files, Card (when the spec names a board), Contract, Acceptance (observable
-   checks with exact commands), Out of scope, Status, Evidence. Each section passes verbatim
-   as one `task`. Ids are never reused.
+   checks with exact commands), Out of scope, Verify, Status, Evidence. Each section passes
+   verbatim as one `task`. Ids are never reused.
 3. `## Waves`: units with satisfied dependencies and no shared files run together. Each
    wave ends in a gate (the build passes) and, when the dev must look at or wire something
    by hand, a handoff line. Review, commits and playtest sign-off belong to the dev and are
@@ -188,27 +190,70 @@ no wave puts two units on one file, and run one implementer dry run that lists e
 it would have to guess. The spec needs no separate dev approval unless coverage drops an
 item.
 
-**Execution with omp's `lead`, `implementer` and `oracle` agents:**
-- Spawn one `lead` per spec. It spawns an `implementer` per unit with the Context and
-  the unit verbatim, answers their questions from the docs, and sends every finished unit
-  to an `oracle` once the whole wave has reported, so oracles see a stable working tree.
-- The `oracle` verifies one unit against its Contract and Acceptance, runs the build gate,
-  captures proof and returns `pass`, `fail` or `blocked`. A build failure in another unit's
-  files makes it `blocked`, not `fail`. It never edits code.
-- During the run the lead is the spec's only writer. It sets each unit's `Status:`
-  (`todo | doing | done | blocked: <why>`) and fills `Evidence:` from the oracle's verdict.
-  Implementers and oracles never write the spec or the board.
-- The `implementer` role carries the ask-don't-guess protocol. A wrong contract, a file
-  outside its Files, a broken dependency or a dev call goes to the lead: as a message while
-  it keeps working, or as a `blocked` report the lead answers by message, which resumes it
-  with its context. A question that needs the dev goes to the dev; nobody guesses.
+**Execution.** The orchestrator runs the spec itself with plain `task` subagents, one
+implementer per unit. There is no lead or verifier role.
+- **LSP preflight.** Before the first wave, open one real file per language in the spec's
+  Files through `lsp`: diagnostics must come back and a go-to-definition must resolve. Fix
+  the project or `lsp.json` when either fails. A language that still has no working LSP is
+  recorded on the Context's `LSP:` line, and its units fall back to build checks.
+- **Spawn.** All units of a wave go in one `task` call. Name each task (`S1Parser`) and
+  write the wave roster (unit to name) into the Context. The `context` is the spec's
+  `## Context` verbatim; each `task` is the unit section verbatim.
+- **Implementers check their own unit**, cheapest check first:
+  1. `lsp` diagnostics on every file they touched, with no new errors or warnings.
+  2. Acceptance checks that need no build: reads, searches, static checks.
+  3. A build or test only when the Context lists it under `Parallel-safe checks`, or when
+     the language has no working LSP. Any other runtime check is reported as `deferred`
+     with its exact command.
+
+  Parallel builds contend for shared output folders and single-instance tools; LSP
+  diagnostics are per file and safe to run side by side.
+- **Report.** Status (`done | partial | blocked`), files changed, deviations from the
+  Contract, each Acceptance item with its check kind (`lsp`, `static`, `run` or
+  `deferred`) and output, peer agreements, open questions.
+- **Wave gate.** Once every implementer in the wave has reported, the orchestrator runs the
+  build gate and every deferred check once, with nothing else building. It reads the diff
+  against each unit's Files and Contract, spot-checks the claimed evidence, then sets the
+  unit's `Status:` (`todo | doing | done | blocked: <why>`) and `Evidence:`. A failure goes
+  back to its implementer by message, which resumes it with its context. After a second
+  failure the orchestrator fixes the unit itself or marks it blocked.
+- **Independent review** only for a unit marked `Verify: review` (hard to undo, security,
+  data migration, or acceptance a person must look at): after the wave gate, a read-only
+  `reviewer` agent checks it against its Contract and Acceptance. The default is
+  `Verify: none`.
+- During the run the orchestrator is the only writer of the spec and the board.
+
+**Ask, don't guess.** An implementer never settles these by guessing, by editing outside
+its Files, or by changing the Contract: the Contract contradicts the code or the spec, the
+work needs a file outside Files, the Contract leaves open behaviour a caller or the dev
+would see, a unit it depends on is missing or broken, or the work needs a dev call. When
+the question blocks part of the unit, it messages the orchestrator (`write agent://<parent>`)
+with the options it sees and the one it would pick, and keeps working. When it blocks
+everything left, it yields `Status: blocked` with the question; the orchestrator answers by
+message, which resumes it. A question that needs the dev goes to the dev.
+
+**Collisions between running implementers.** Waves never put two units on one file, so a
+collision means the spec missed something: a shared generated file, a single-instance tool,
+an interface that has not landed yet.
+1. The implementer asks the orchestrator first and keeps working on what the collision does
+   not touch.
+2. Last resort, when the orchestrator has not answered and waiting would waste work, or the
+   clash is purely between two running peers: message the peer directly by its roster name
+   (`write agent://<name>`).
+   - Peers may agree on ordering, turns on a tool or build output, who makes a shared
+     mechanical edit, and an interface exactly as the spec states it.
+   - Peers never change a Contract, Files, Acceptance, or anything traced to a `(dev)`
+     constraint or `D-` entry. Those go to the orchestrator or the dev.
+   - Both report the agreement under `Peer agreements:`. The orchestrator checks it at the
+     wave gate and records it in `## Amendments` when it touches the spec.
 
 **Where status lives.** The spec tracks units. A kanban board, when the repo has one, tracks
 what the dev looks at: one card per deliverable the dev can see or playtest, plus cards for
 the dev's own work such as art or decisions. Never one card per unit, and never a copy of
-spec content: the card body names the spec units it covers. The lead moves a card when its
-first unit starts and when its last unit passes, attaches deliverable-level proof, and
-writes a dev question as the card's `blocked` reason so it appears in the session digest.
+spec content: the card body names the spec units it covers. The orchestrator moves a card
+when its first unit starts and when its last unit passes, attaches deliverable-level proof,
+and writes a dev question as the card's `blocked` reason so it appears in the session
+digest.
 Without a board, dev questions go at the top of the spec under `## Waiting on the dev`.
 
 ## The investigation workflow
@@ -285,14 +330,17 @@ subagents; degrade gracefully:
   self-contained prompt; in omp this is the task tool. Without it, run the passes one at a
   time, ideally each in a fresh session, and record `Mode: sequential` in the review log or
   the spec's amendments.
-- **Execution roles.** `lead`, `implementer` and `oracle` are omp user agents in
-  `~/.omp/agent/agents/`. Without them, the orchestrator plays lead, pastes the implementer
-  role into each task prompt, and runs a fresh-context pass with no edit tools as oracle.
+- **Execution needs no custom agents.** Implementers are plain subagents and the spec's
+  Context carries their rules. Without peer messaging, an implementer yields `blocked`
+  instead of messaging, and the orchestrator settles collisions at the wave gate. Without
+  LSP, the Context's `LSP:` line says so and implementers fall back to parallel-safe checks.
+- **Independent review** uses a read-only reviewer agent (omp's `reviewer`); without one,
+  run a fresh-context pass with no edit tools.
 - **Prompts are self-contained.** A subagent gets the doc path, its question or lens, the
   repo areas to read, and the output shape. Reviewer prompts carry the reviewer contract
   verbatim. Never assume a subagent saw the chat.
-- **The doc is the shared state.** Subagents return rows or sections; the orchestrator, or
-  the lead during execution, merges them.
+- **The doc is the shared state.** Subagents return rows or sections; the orchestrator
+  merges them.
 
 ## Rules
 

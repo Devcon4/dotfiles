@@ -78,7 +78,7 @@ and strings, with line numbers as hints only: lines drift between writing and ex
 ```markdown
 Status: draft
 Updated: <YYYY-MM-DD>
-Owner: <orchestrator or lead>
+Owner: <orchestrator>
 Source: <slug>.proposal.md revised-N
 Board: <board slug, or none>
 
@@ -91,11 +91,26 @@ Board: <board slug, or none>
 Goal: <two lines>
 Rules for implementers:
 - Edit only the files your unit lists; create files only at the paths it gives.
-- Do not compile, run the editor or run tests unless your unit says to; the oracle verifies.
-- Do not write this spec or the board. When something is unclear, stop and ask the lead.
+- Check cheapest first: `lsp` diagnostics on every file you touched, then Acceptance
+  checks that need no build. Run a build or test only when it is listed under
+  Parallel-safe checks or your language has no LSP; report any other check as `deferred`
+  with its exact command.
+- Do not write this spec or the board.
+- Never guess. A wrong Contract, a file outside your Files, a broken dependency or a dev
+  call goes to the orchestrator: message it and keep working, or yield `Status: blocked`
+  with the question and your options.
+- A collision with another running unit goes to the orchestrator first. Only when it has
+  not answered and waiting would waste work, message that unit by its roster name; agree
+  on ordering or mechanics only, never on a Contract, Files or Acceptance change.
+- Report: Status (done | partial | blocked), files changed, deviations from the Contract,
+  each Acceptance item with its check kind (lsp | static | run | deferred) and output,
+  Peer agreements (or none), open questions.
 Terms and units: <invariants, coordinate systems, glossary>
 Shared contracts: <types and signatures more than one unit uses>
-Build gate: <exact command and expected result>
+LSP: <languages confirmed in preflight; fallback for any without a working LSP>
+Parallel-safe checks: <commands implementers may run side by side, or none>
+Build gate: <exact command and expected result; the orchestrator runs it once per wave>
+Wave roster: <filled at spawn: S-1 → S1Name, S-2 → S2Name>
 Proof: <where screenshots and command output go>
 
 ## S-1 <name>
@@ -107,8 +122,9 @@ Contract: <signatures, types, behaviour>
 Acceptance:
 - <observable check> → `<exact command>` prints <expected>
 Out of scope: <what this unit must not do>
+Verify: none | review: <why: hard to undo, security, migration, visual>
 Status: todo
-Evidence: <oracle verdict, check output, proof path>
+Evidence: <check output from the report and the wave gate, proof path>
 
 ## Waves
 1. S-1, S-2 (no shared files). Gate: <build passes>.
